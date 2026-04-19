@@ -48,7 +48,7 @@ function geojsonToHeatmapPoints(geojson) {
     });
 }
 
-// Derive tree/grass/weed severity from top_species list
+// Derive tree/grass/weed severity labels from top_species list
 function typeBreakdown(topSpecies = []) {
   const best = {};
   for (const sp of topSpecies) {
@@ -95,7 +95,7 @@ const Heatmap = () => {
   const [forecast, setForecast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Track whether isLoaded changed so we can convert after Maps SDK is ready
+  // Holds GeoJSON until Maps SDK is ready to convert it
   const geojsonRef = useRef(null);
 
   // Resolve user location once
@@ -120,7 +120,6 @@ const Heatmap = () => {
         geojsonRef.current = geojson;
         setForecast(fc);
         setLoading(false);
-        // Convert immediately if Maps SDK already loaded
         if (isLoaded) {
           setHeatmapPoints(geojsonToHeatmapPoints(geojson));
         }
