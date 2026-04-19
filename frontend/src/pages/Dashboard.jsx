@@ -1,197 +1,264 @@
+import React, { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
+import { getForecast } from '../api/client';
+import ForecastTimeline from '../components/ForecastTimeline';
+import SpeciesCard from '../components/SpeciesCard';
+import PollenIndex from '../components/PollenIndex';
+import AdvisoryPanel from '../components/AdvisoryPanel';
 
-import React, { useState } from 'react';
-import { ArrowUp, X } from 'lucide-react';
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-// Mock data reflecting the new API contract
-const mockForecast = {
-  location: { lat: 32.71, lng: -117.16, city: "San Diego" },
-  daily: [
-    {
-      date: "2026-04-18",
-      composite_index: 4.1,
-      severity: "high",
-      top_species: [
-        { name: "White oak", current_stage: "PEAK_BLOOM", pollen_prob: 0.82 }
-      ]
-    }
-  ],
-  narrative: {
-    headline: "Oak pollen peaks this weekend",
-    today_summary: "Tree pollen is high in your area today, driven primarily by white oak. Keep windows closed during morning hours (5-10 AM)."
-  }
+const SEVERITY_COLORS = {
+  low: '#4ade80', moderate: '#facc15', high: '#fb923c', very_high: '#ef4444',
 };
 
-// Helper to get severity color for accents
-const getSeverityColor = (value, type = 'text') => {
-    const intensity = typeof value === 'string' ? { 'low': 1, 'moderate': 2.5, 'high': 4, 'severe': 5 }[value] : value;
-    if (intensity <= 1.5) return type === 'bg' ? 'bg-teal-400' : 'text-teal-400';
-    if (intensity <= 3.0) return type === 'bg' ? 'bg-yellow-400' : 'text-yellow-400';
-    if (intensity <= 4.5) return type === 'bg' ? 'bg-orange-400' : 'text-orange-400';
-    return type === 'bg' ? 'bg-red-600' : 'text-red-600';
-};
+function severityTextClass(severity) {
+  const map = { low: 'text-green-400', moderate: 'text-yellow-400', high: 'text-orange-400', very_high: 'text-red-500' };
+  return map[severity] || 'text-white';
+}
 
-const textGlowStyle = (severity) => {
-    const colorMap = {
-        'low': 'rgb(74 222 128 / 0.7)', // teal-400
-        'moderate': 'rgb(250 204 21 / 0.7)', // yellow-400
-        'high': 'rgb(251 146 60 / 0.7)', // orange-400
-        'severe': 'rgb(220 38 38 / 0.7)', // red-600
-    };
-    return { textShadow: `0 0 12px ${colorMap[severity] || 'rgb(255 255 255 / 0.7)'}` };
-};
+function glowStyle(severity) {
+  const colors = { low: '74,222,128', moderate: '250,204,21', high: '251,146,60', very_high: '239,68,68' };
+  const rgb = colors[severity] || '255,255,255';
+  return { textShadow: `0 0 14px rgba(${rgb},0.7)` };
+}
 
-// Sub-components for clarity
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
 const SpeciesProgressBar = ({ name, stage, progress, subtext }) => {
-    const color = getSeverityColor(progress * 5, 'bg');
-    const formattedStage = stage.replace(/_/g, ' ').toLowerCase();
-
-    return (
-        <div>
-            <div className="flex justify-between items-baseline">
-                <p className="text-sm font-medium capitalize">{name} <span className="text-xs text-slate-400">{formattedStage}</span></p>
-            </div>
-            <div className="w-full bg-slate-700 rounded-full h-2 my-1">
-                <div className={`${color} h-2 rounded-full`} style={{ width: `${progress * 100}%` }}></div>
-            </div>
-            {subtext && <p className="text-xs text-slate-500">{subtext}</p>}
-        </div>
-    );
+  const color = progress > 0.7 ? '#ef4444' : progress > 0.4 ? '#fb923c' : progress > 0.1 ? '#facc15' : '#64748b';
+  const stageLabel = stage.replace(/_/g, ' ').toLowerCase();
+  return (
+    <div>
+      <div className="flex justify-between items-baseline">
+        <p className="text-sm font-medium capitalize text-white">{name}</p>
+        <span className="text-xs text-slate-400">{stageLabel}</span>
+      </div>
+      <div className="w-full bg-slate-700 rounded-full h-1.5 my-1">
+        <div className="h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.max(2, progress * 100)}%`, backgroundColor: color }} />
+      </div>
+      {subtext && <p className="text-[10px] text-slate-500">{subtext}</p>}
+    </div>
+  );
 };
 
 const ProfileDrawer = ({ onClose }) => (
-    <div className="absolute top-0 right-0 h-full w-full md:w-1/3 bg-slate-800/50 backdrop-blur-xl border-l border-slate-700 p-6 z-30 animate-slide-in">
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={24} /></button>
-        <h2 className="text-xl font-bold mb-6 text-white" style={textGlowStyle()}>User Reactivity Profile</h2>
-        
-        <div className="space-y-4">
-            <h3 className="font-semibold text-slate-300">Known Triggers (Prick Test Results)</h3>
-            <SpeciesProgressBar name="Grass (Timothy/Ryegrass)" stage="High Sensitivity" progress={0.9} />
-            <SpeciesProgressBar name="Trees (Oak/Birch)" stage="Moderate Sensitivity" progress={0.6} />
-            <SpeciesProgressBar name="Weeds (Ragweed)" stage="Low Sensitivity" progress={0.2} />
-        </div>
+  <div className="absolute top-0 right-0 h-full w-full md:w-80 bg-slate-900/95 backdrop-blur-xl border-l border-slate-700 p-6 z-30">
+    <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white">
+      <X size={22} />
+    </button>
+    <h2 className="text-lg font-bold mb-5 text-white">User Reactivity Profile</h2>
 
-        <div className="mt-8">
-            <h3 className="font-semibold text-slate-300">Personalized Alert Settings</h3>
-            <div className="flex items-center justify-between mt-4 bg-slate-900/50 p-3 rounded-lg">
-                <label htmlFor="oak-alert" className="text-sm">Push notifications when Oak &gt; 3.0</label>
-                <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="oak-alert" id="oak-alert" className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                    <label htmlFor="oak-alert" className="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer"></label>
-                </div>
-            </div>
-             <div className="flex items-center justify-between mt-2 bg-slate-900/50 p-3 rounded-lg">
-                <label htmlFor="weekly-email" className="text-sm">Email weekly forecast</label>
-                <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="weekly-email" id="weekly-email" defaultChecked className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                    <label htmlFor="weekly-email" className="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer"></label>
-                </div>
-            </div>
-        </div>
+    <div className="space-y-4">
+      <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Known Triggers</h3>
+      <SpeciesProgressBar name="Grass (Timothy / Ryegrass)" stage="HIGH_SENSITIVITY" progress={0.9} />
+      <SpeciesProgressBar name="Trees (Oak / Birch)" stage="MODERATE_SENSITIVITY" progress={0.6} />
+      <SpeciesProgressBar name="Weeds (Ragweed)" stage="LOW_SENSITIVITY" progress={0.2} />
     </div>
+
+    <div className="mt-6 space-y-3">
+      <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Alert Settings</h3>
+      {[
+        { id: 'oak-alert', label: 'Push notification when Oak > 3.0' },
+        { id: 'weekly-email', label: 'Weekly forecast email', defaultOn: true },
+      ].map(({ id, label, defaultOn }) => (
+        <div key={id} className="flex items-center justify-between bg-slate-800/60 rounded-lg px-3 py-2.5">
+          <label htmlFor={id} className="text-sm text-slate-300">{label}</label>
+          <input type="checkbox" id={id} defaultChecked={defaultOn} className="w-4 h-4 accent-teal-400" />
+        </div>
+      ))}
+    </div>
+  </div>
 );
 
+// ---------------------------------------------------------------------------
+// Main Dashboard
+// ---------------------------------------------------------------------------
 
 const Dashboard = () => {
-    const [forecast, setForecast] = useState(mockForecast);
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [forecast, setForecast] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [activeTab, setActiveTab] = useState('species'); // 'species' | 'advisory'
 
-    if (!forecast) {
-        return <div className="bg-slate-900 min-h-screen flex items-center justify-center text-white">Loading Forecast...</div>;
+  useEffect(() => {
+    function load(lat, lng) {
+      getForecast(lat, lng)
+        .then(data => { setForecast(data); setLoading(false); })
+        .catch(err => { setError(err.message); setLoading(false); });
     }
 
-    const { location, daily, narrative } = forecast;
-    const today = daily[0];
-    const severity = today.severity;
-    const heroMetric = today.composite_index;
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => load(pos.coords.latitude, pos.coords.longitude),
+        () => load(32.71, -117.16), // fallback: San Diego
+      );
+    } else {
+      load(32.71, -117.16);
+    }
+  }, []);
 
+  if (loading) {
     return (
-        <main className="bg-slate-900 min-h-screen font-sans text-white relative overflow-hidden">
-            {/* Map Background & Pins */}
-            <div className="absolute inset-0 z-0">
-                <div className="h-full w-full bg-slate-800 flex items-center justify-center">
-                    <p className="text-4xl text-slate-700 font-bold">[Interactive Heatmap Placeholder]</p>
-                    {/* Mock City Pins */}
-                     <div className="absolute top-1/2 left-1/3 p-2 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-teal-500/50">
-                        <p className="font-bold text-sm">San Diego (Downtown)</p>
-                        <p className="text-xs text-slate-300">Composite Index: <span className="text-teal-400">2.1/5</span></p>
-                    </div>
-                     <div className="absolute top-1/3 left-2/3 p-2 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-red-500/50">
-                        <p className="font-bold text-sm">El Cajon</p>
-                        <p className="text-xs text-slate-300">Composite Index: <span className="text-red-500">4.8/5</span>. Top: White Oak</p>
-                    </div>
-                </div>
-            </div>
-            
-            {/* Top Search Bar */}
-            <div className="absolute top-5 left-1/2 -translate-x-1/2 w-full max-w-md z-20">
-                <input 
-                    type="text" 
-                    placeholder="Enter Pincode or City to scan local H3 cells"
-                    className="w-full bg-slate-800/50 backdrop-blur-md border border-slate-700 rounded-lg px-4 py-2 text-center text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400"
-                />
-            </div>
-
-            {/* Floating UI Panels */}
-            <div className="relative z-10 p-4 md:p-6 h-screen w-screen pointer-events-none grid grid-rows-[auto_1fr_auto] grid-cols-1 md:grid-cols-3 gap-6">
-
-                {/* Top-Left Panel: Daily Forecast */}
-                <div className="md:col-span-1 pointer-events-auto bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-xl p-4 flex flex-col gap-4">
-                    <h2 className="font-semibold text-slate-300">Current Pollen Index</h2>
-                    <div className="flex items-baseline gap-3">
-                        <span className={`text-6xl font-bold ${getSeverityColor(severity)}`} style={textGlowStyle(severity)}>{heroMetric}</span>
-                        <span className="text-3xl text-slate-400">/ 5</span>
-                        <div className="flex items-center text-red-500">
-                           <ArrowUp size={20} />
-                           <span className="font-semibold text-sm">+12% vs yesterday</span>
-                        </div>
-                    </div>
-                    <div className="space-y-3">
-                        <SpeciesProgressBar name={today.top_species[0].name} stage={today.top_species[0].current_stage} progress={today.top_species[0].pollen_prob} subtext="Based on 12 local iNat observations." />
-                        <SpeciesProgressBar name="Timothy grass" stage="EARLY_BLOOM" progress={0.45} />
-                        <SpeciesProgressBar name="Common ragweed" stage="DORMANT" progress={0.05} />
-                    </div>
-                </div>
-
-                {/* Top-Right Panel: AI Advisory */}
-                <div className="md:col-start-3 md:col-span-1 pointer-events-auto bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-xl p-4 flex flex-col">
-                    <h2 className="font-semibold text-slate-300">AI Advisory</h2>
-                    <div className="flex-grow flex flex-col justify-center gap-3">
-                        <h3 className="text-xl font-bold text-white" style={{textShadow: '0 0 8px rgba(255,255,255,0.7)'}}>{narrative.headline}</h3>
-                        <p className="text-sm text-slate-300">{narrative.today_summary}</p>
-                    </div>
-                    <button onClick={() => setIsDrawerOpen(true)} className="w-full font-semibold bg-teal-500/20 text-teal-300 border border-teal-500 rounded-lg py-2 hover:bg-teal-500/40 transition-all duration-300" style={{textShadow: '0 0 8px rgb(74 222 128 / 0.5)'}}>
-                        Open Health Profile / Prick Test Data
-                    </button>
-                </div>
-
-                {/* Bottom Bar: 14-Day Timeline */}
-                <div className="md:col-span-3 self-end pointer-events-auto bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-xl p-4 flex items-center justify-center gap-1 h-28">
-                    {/* Mock 14-day bars */}
-                    {[...Array(14)].map((_, i) => {
-                        const isEstimate = i >= 5;
-                        const barHeight = Math.random() * 80 + 10;
-                        const color = getSeverityColor(Math.random() * 5, 'bg');
-
-                        return (
-                            <div key={i} className="flex-1 h-full flex flex-col justify-end items-center">
-                                {i === 5 && <span className="absolute -translate-x-1/2 text-xs text-slate-500 transform bottom-[100px]">Estimation Threshold</span>}
-                                {i === 4 && <div className="absolute h-full border-l border-dashed border-slate-600 ml-[-2px]"></div>}
-                                <div 
-                                    className={`w-full rounded-t-sm ${color}`}
-                                    style={{ height: `${barHeight}%`, opacity: isEstimate ? 0.5 : 1 }}
-                                ></div>
-                                <span className="text-xs text-slate-400 mt-1">{new Date(new Date().setDate(new Date().getDate() + i)).getDate()}</span>
-                            </div>
-                        )
-                    })}
-                </div>
-            </div>
-            
-            {/* Slide-Out Drawer */}
-            {isDrawerOpen && <ProfileDrawer onClose={() => setIsDrawerOpen(false)} />}
-        </main>
+      <div className="bg-slate-900 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-teal-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-400 text-sm">Fetching pollen forecast…</p>
+        </div>
+      </div>
     );
+  }
+
+  if (error || !forecast) {
+    return (
+      <div className="bg-slate-900 min-h-screen flex items-center justify-center text-center px-6">
+        <div>
+          <p className="text-red-400 font-semibold mb-2">Could not load forecast</p>
+          <p className="text-slate-500 text-sm">{error || 'Unknown error'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { location, daily, narrative, advisory } = forecast;
+  const displayDay = selectedDay || daily[0];
+  const today = daily[0];
+  const { severity } = displayDay;
+  const color = SEVERITY_COLORS[severity] || '#facc15';
+
+  return (
+    <main className="bg-slate-900 min-h-screen font-sans text-white relative overflow-hidden pb-20">
+      {/* Background gradient */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800" />
+        <div
+          className="absolute inset-0 opacity-5"
+          style={{ backgroundImage: `radial-gradient(circle at 30% 50%, ${color} 0%, transparent 60%)` }}
+        />
+      </div>
+
+      <div className="relative z-10 px-4 pt-5 space-y-4">
+        {/* Location header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-white">PollenCast</h1>
+            <p className="text-xs text-slate-400">
+              {location.city || `${location.lat?.toFixed(2)}, ${location.lng?.toFixed(2)}`}
+            </p>
+          </div>
+          <button
+            onClick={() => setIsDrawerOpen(true)}
+            className="text-xs text-teal-400 border border-teal-700 rounded-lg px-3 py-1.5 hover:bg-teal-900/40 transition-colors"
+          >
+            Profile
+          </button>
+        </div>
+
+        {/* Narrative headline */}
+        {narrative?.headline && (
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3">
+            <p className="text-sm font-semibold text-white">{narrative.headline}</p>
+            {narrative.today_summary && (
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">{narrative.today_summary}</p>
+            )}
+          </div>
+        )}
+
+        {/* Main pollen index + top species row */}
+        <div className="flex gap-4 items-start">
+          {/* Circular gauge */}
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 flex flex-col items-center flex-shrink-0">
+            <PollenIndex index={displayDay.composite_index} severity={severity} size={130} />
+            <p className="text-[10px] text-slate-500 mt-2 text-center">
+              {selectedDay ? selectedDay.date : 'Today'}
+            </p>
+          </div>
+
+          {/* Top 3 species bars */}
+          <div className="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 space-y-3">
+            <p className="text-xs font-semibold text-slate-300 uppercase tracking-wide">Active Species</p>
+            {(displayDay.top_species || [])
+              .filter(sp => sp.pollen_prob > 0)
+              .slice(0, 3)
+              .map((sp, i) => (
+                <SpeciesProgressBar
+                  key={i}
+                  name={sp.name}
+                  stage={sp.current_stage}
+                  progress={sp.pollen_prob}
+                  subtext={sp.inat_obs_count > 0 ? `${sp.inat_obs_count} local iNat obs` : null}
+                />
+              ))}
+            {(displayDay.top_species || []).filter(sp => sp.pollen_prob > 0).length === 0 && (
+              <p className="text-sm text-slate-500">No active pollen sources</p>
+            )}
+          </div>
+        </div>
+
+        {/* 14-day timeline */}
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+          <p className="text-xs font-semibold text-slate-300 uppercase tracking-wide mb-3">14-Day Forecast</p>
+          <ForecastTimeline data={daily} onDaySelect={setSelectedDay} />
+        </div>
+
+        {/* Tab switch: Species cards / Advisory */}
+        <div className="flex gap-2">
+          {['species', 'advisory'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-2 text-sm font-medium rounded-xl border transition-colors ${
+                activeTab === tab
+                  ? 'bg-teal-500/20 text-teal-300 border-teal-500/50'
+                  : 'text-slate-400 border-slate-700/50 hover:border-slate-600'
+              }`}
+            >
+              {tab === 'species' ? 'Species Detail' : 'Advisory'}
+            </button>
+          ))}
+        </div>
+
+        {/* Species cards */}
+        {activeTab === 'species' && (
+          <div className="space-y-3">
+            {(displayDay.top_species || [])
+              .sort((a, b) => b.pollen_index - a.pollen_index)
+              .map((sp, i) => (
+                <SpeciesCard key={i} species={sp} />
+              ))}
+          </div>
+        )}
+
+        {/* Advisory panel */}
+        {activeTab === 'advisory' && (
+          <div className="space-y-3">
+            <AdvisoryPanel advisory={advisory} />
+            {narrative?.seven_day && (
+              <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+                <p className="text-xs font-semibold text-slate-300 uppercase tracking-wide mb-2">7-Day Outlook</p>
+                <p className="text-sm text-slate-300 leading-relaxed">{narrative.seven_day}</p>
+              </div>
+            )}
+            {narrative?.fourteen_day && (
+              <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+                <p className="text-xs font-semibold text-slate-300 uppercase tracking-wide mb-2">14-Day Outlook</p>
+                <p className="text-sm text-slate-300 leading-relaxed">{narrative.fourteen_day}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Profile drawer overlay */}
+      {isDrawerOpen && <ProfileDrawer onClose={() => setIsDrawerOpen(false)} />}
+    </main>
+  );
 };
 
 export default Dashboard;
-

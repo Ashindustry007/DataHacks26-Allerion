@@ -8,12 +8,14 @@ import PhotoUpload from './pages/PhotoUpload';
 const App = () => {
   return (
     <Router>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/heatmap" element={<Heatmap />} />
-        <Route path="/upload" element={<PhotoUpload />} />
-      </Routes>
+      <div className="bg-slate-900 min-h-screen">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/heatmap" element={<Heatmap />} />
+          <Route path="/upload" element={<PhotoUpload />} />
+        </Routes>
+        <Navbar />
+      </div>
     </Router>
   );
 };
