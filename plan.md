@@ -333,7 +333,7 @@ export async function getForecast(lat, lng) {
         "allergenicity": 2, "google_code": "COTTONWOOD"},
        {"taxon_id": 52823, "name": "Olive", "pollen_type": "tree",
         "allergenicity": 4, "google_code": "OLIVE"},
-       {"taxon_id": 52853, "name": "Common mugwort", "pollen_type": "weed",
+       {"taxon_id": 52856, "name": "Common mugwort", "pollen_type": "weed",
         "allergenicity": 3, "google_code": "MUGWORT"},
        {"taxon_id": 48513, "name": "Red alder", "pollen_type": "tree",
         "allergenicity": 3, "google_code": "ALDER"},
@@ -555,7 +555,7 @@ curl "https://pollen.googleapis.com/v1/forecast:lookup?key=$GOOGLE_POLLEN_API_KE
 curl "https://api.inaturalist.org/v1/observations?taxon_id=56928&quality_grade=research&d1=2026-04-01&nelat=33.1&nelng=-116.8&swlat=32.5&swlng=-117.5&term_id=12&term_value_id=13&per_page=5"
 
 # Test Gemini
-curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$GEMINI_API_KEY" \
+curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$GEMINI_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"contents":[{"parts":[{"text":"Say hello in JSON: {\"message\":\"...\"}"}]}]}'
 ```
@@ -662,7 +662,7 @@ Build `gemini_agents.py`. Three agents, one file. Use the Gemini REST API direct
 ```python
 import httpx, json, os
 
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 API_KEY = os.getenv("GEMINI_API_KEY")
 
 async def _call_gemini(system_prompt: str, user_content: str) -> dict:
@@ -748,7 +748,7 @@ async def classify_photo(image_base64: str, lat: float, lng: float) -> dict:
         "contents": [{
             "parts": [
                 {"text": f"Identify this plant and its phenology stage. Location: lat {lat}, lng {lng}"},
-                {"inline_data": {"mime_type": "image/jpeg", "data": image_base64}}
+                {"inlineData": {"mimeType": "image/jpeg", "data": image_base64}}
             ]
         }],
         "systemInstruction": {"parts": [{"text": system}]},
