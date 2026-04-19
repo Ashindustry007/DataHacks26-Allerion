@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-google-maps/api": "^2.20.8",
     "h3-js": "^4.4.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.363.0",

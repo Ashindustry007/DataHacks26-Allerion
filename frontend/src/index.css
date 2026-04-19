@@ -17,6 +17,70 @@ body {
 
 .leaflet-container {
   font-family: Inter, ui-sans-serif, system-ui, Roboto, sans-serif;
+  background: #050811 !important;
+}
+
+/* Custom simulated heat SVG circle class */
+.blurred-circle {
+  filter: blur(20px);
+  /* The blend mode adds the neon glow when circles overlap */
+  mix-blend-mode: screen; 
+}
+
+/* ── Tech-noir hex glow system ─────────────────────────────── */
+/* Subtle base glow — dark cells barely visible, bright cells bloom */
+.hex-glow-layer path {
+  filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 8px currentColor);
+  transition: filter 0.18s ease, fill-opacity 0.18s ease;
+}
+.hex-glow-layer path:hover {
+  filter: drop-shadow(0 0 6px currentColor)
+          drop-shadow(0 0 16px currentColor)
+          drop-shadow(0 0 30px currentColor);
+  cursor: pointer;
+}
+
+/* Leaflet popup — deep glass with indigo accent */
+.leaflet-popup-content-wrapper {
+  background: rgba(8, 12, 26, 0.94) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(99, 102, 241, 0.12) !important;
+  border-radius: 14px !important;
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 0 20px rgba(0, 0, 0, 0.7),
+    0 0 40px rgba(99, 102, 241, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+.leaflet-popup-tip {
+  background: rgba(8, 12, 26, 0.94) !important;
+}
+.leaflet-popup-close-button {
+  color: #475569 !important;
+}
+.leaflet-popup-close-button:hover {
+  color: #94a3b8 !important;
+}
+
+/* Scan-line overlay — subtle indigo tint */
+@keyframes pc-scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+.pc-scanline::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 998;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(99, 102, 241, 0.015) 2px,
+    rgba(99, 102, 241, 0.015) 4px
+  );
+  pointer-events: none;
+  animation: pc-scanline 6s linear infinite;
 }
 
 /* Estimated-region bar hatch overlay */

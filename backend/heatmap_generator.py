@@ -11,6 +11,15 @@ _DATA_DIR = Path(__file__).parent / "data"
 
 def generate_heatmap(center_lat: float, center_lng: float, radius_rings: int = 5) -> dict:
     """Generate GeoJSON FeatureCollection for H3 cells around a center point."""
+    # Approximate H3 edge length in meters per resolution level
+    H3_EDGE_METERS = {
+        0: 1107712.591, 1: 418676.005, 2: 158244.655, 3: 59810.857,
+        4: 22606.379, 5: 8544.408, 6: 3229.482, 7: 1220.629,
+        8: 461.354, 9: 174.375, 10: 65.907, 11: 24.910,
+        12: 9.415, 13: 3.559, 14: 1.348, 15: 0.509,
+    }
+    resolution_meters = round(H3_EDGE_METERS.get(H3_RESOLUTION, 0), 3)
+
     center_cell = h3.latlng_to_cell(center_lat, center_lng, H3_RESOLUTION)
     cells = h3.grid_disk(center_cell, radius_rings)
 
@@ -33,8 +42,8 @@ def generate_heatmap(center_lat: float, center_lng: float, radius_rings: int = 5
             },
             "properties": {
                 "h3_cell":          cell,
-                "lat":              round(lat, 4),
-                "lng":              round(lng, 4),
+                "lat":              round(lat, 6),
+                "lng":              round(lng, 6),
                 "composite_index":  forecast["composite_index"],
                 "severity":         forecast["severity"],
                 "top_species_name": top[0]["name"] if top else "None",
@@ -42,7 +51,16 @@ def generate_heatmap(center_lat: float, center_lng: float, radius_rings: int = 5
             },
         })
 
-    return {"type": "FeatureCollection", "features": features}
+    return {
+        "type": "FeatureCollection",
+        "features": features,
+        "metadata": {
+            "h3_resolution": H3_RESOLUTION,
+            "resolution_meters": resolution_meters,
+            "total_cells": len(features),
+            "center": {"lat": center_lat, "lng": center_lng},
+        },
+    }
 
 
 def save_heatmap(center_lat: float, center_lng: float, filename: str, radius_rings: int = 5) -> None:

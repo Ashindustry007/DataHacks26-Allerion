@@ -7,8 +7,8 @@ GOOGLE_POLLEN_API_KEY = os.getenv("GOOGLE_POLLEN_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID")
 
-# H3 resolution 4 = ~22km hexagons (metro-level granularity)
-H3_RESOLUTION = 4
+# H3 resolution 15 = ~0.5m edge hexagons (~1m accuracy)
+H3_RESOLUTION = 15
 
 ALLERGEN_SPECIES = [
     {"taxon_id": 48678, "name": "Common ragweed",      "pollen_type": "weed",  "allergenicity": 5, "google_code": "RAGWEED"},
