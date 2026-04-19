@@ -9,39 +9,43 @@ function buildMockForecast(lat, lng) {
   return {
     location: { lat, lng, h3_cell: "842a100ffffffff", city: "San Diego" },
     generated_at: new Date().toISOString(),
-    daily: Array.from({ length: 14 }, (_, i) => ({
-      date: new Date(Date.now() + i * 86400000).toISOString().split("T")[0],
-      day_offset: i,
-      confidence_tier: i < 5 ? "high" : "estimated",
-      composite_index: Math.round((2.5 + Math.sin(i / 3) * 1.5) * 10) / 10,
-      severity: ["low", "moderate", "high", "moderate"][i % 4],
-      top_species: [
-        {
-          species_id: 56928, name: "White oak", pollen_type: "tree",
-          current_stage: "PEAK_BLOOM", pollen_prob: 0.82, pollen_index: 4.1,
-          days_to_peak: 0, peak_date_est: null, confidence: 0.85,
-          sources: ["inat", "google", "base"], seasonal_shift_days: -8,
-          inat_obs_count: 12, google_upi: 4,
-        },
-        {
-          species_id: 48678, name: "Common ragweed", pollen_type: "weed",
-          current_stage: "DORMANT", pollen_prob: 0.0, pollen_index: 0,
-          days_to_peak: 119, peak_date_est: null, confidence: 0.9,
-          sources: ["base"], seasonal_shift_days: 0,
-          inat_obs_count: 0, google_upi: 0,
-        },
-        {
-          species_id: 64727, name: "Timothy grass", pollen_type: "grass",
-          current_stage: "EARLY_BLOOM", pollen_prob: 0.45, pollen_index: 1.8,
-          days_to_peak: 14, peak_date_est: null, confidence: 0.7,
-          sources: ["base"], seasonal_shift_days: 0,
-          inat_obs_count: 3, google_upi: null,
-        },
-      ],
-    })),
+    daily: Array.from({ length: 14 }, (_, i) => {
+      const base = i === 0 ? 4.1 : Math.round((2.4 + Math.sin(i / 2.8) * 1.65) * 10) / 10;
+      const sev = base >= 4 ? "very_high" : base >= 3 ? "high" : base >= 2 ? "moderate" : "low";
+      return {
+        date: new Date(Date.now() + i * 86400000).toISOString().split("T")[0],
+        day_offset: i,
+        confidence_tier: i < 5 ? "high" : "estimated",
+        composite_index: i === 0 ? 4.1 : base,
+        severity: i === 0 ? "high" : sev,
+        top_species: [
+          {
+            species_id: 56928, name: "White oak", pollen_type: "tree",
+            current_stage: "PEAK_BLOOM", pollen_prob: 0.82, pollen_index: 4.1,
+            days_to_peak: 0, peak_date_est: null, confidence: 0.85,
+            sources: ["inat", "google", "base"], seasonal_shift_days: -8,
+            inat_obs_count: 12, google_upi: 4,
+          },
+          {
+            species_id: 64727, name: "Timothy grass", pollen_type: "grass",
+            current_stage: "EARLY_BLOOM", pollen_prob: 0.45, pollen_index: 1.8,
+            days_to_peak: 14, peak_date_est: null, confidence: 0.7,
+            sources: ["base"], seasonal_shift_days: 0,
+            inat_obs_count: 3, google_upi: null,
+          },
+          {
+            species_id: 48678, name: "Common ragweed", pollen_type: "weed",
+            current_stage: "DORMANT", pollen_prob: 0.0, pollen_index: 0,
+            days_to_peak: 119, peak_date_est: null, confidence: 0.9,
+            sources: ["base"], seasonal_shift_days: 0,
+            inat_obs_count: 0, google_upi: 0,
+          },
+        ],
+      };
+    }),
     narrative: {
       headline: "Oak pollen peaks this weekend",
-      today_summary: "Tree pollen is high in your area today, driven primarily by white oak. Keep windows closed during morning hours (5–10 AM) and shower after being outside.",
+      today_summary: "Tree pollen is high in your area today, driven primarily by white oak. Keep windows closed during morning hours (5-10 AM).",
       seven_day: "Oak pollen will remain elevated through Thursday before declining. Grass pollen is beginning to rise — watch for Timothy grass by mid-week.",
       fourteen_day: "Grass season begins in approximately 3 weeks. Ragweed remains dormant until late summer.",
     },
@@ -61,47 +65,61 @@ function buildMockForecast(lat, lng) {
   };
 }
 
-// Pre-generated approximate hexagonal GeoJSON cells around San Diego
+// GeoJSON hex grid — coastal (west) = lower composite_index, inland (east) = higher
 function buildMockHeatmap(lat, lng) {
-  const r = 0.18; // approximate hex radius in degrees at resolution 4
-  const centers = [
-    [lat, lng, "high", 3.8, "White oak"],
-    [lat + r * 1.5, lng, "moderate", 2.3, "White oak"],
-    [lat - r * 1.5, lng, "very_high", 4.6, "White oak"],
-    [lat + r * 0.75, lng + r * 1.3, "high", 3.2, "Timothy grass"],
-    [lat - r * 0.75, lng + r * 1.3, "moderate", 2.1, "Eastern red cedar"],
-    [lat + r * 0.75, lng - r * 1.3, "low", 1.1, "Common ragweed"],
-    [lat - r * 0.75, lng - r * 1.3, "high", 3.5, "White oak"],
-    [lat + r * 1.5, lng - r * 2.6, "moderate", 2.7, "Paper birch"],
-    [lat - r * 1.5, lng + r * 2.6, "very_high", 4.2, "White oak"],
-    [lat, lng + r * 2.6, "low", 0.9, "Kentucky bluegrass"],
-    [lat, lng - r * 2.6, "high", 3.9, "White oak"],
-    [lat + r * 3, lng, "moderate", 2.0, "Timothy grass"],
-    [lat - r * 3, lng, "moderate", 2.5, "Paper birch"],
-  ];
+  const r = 0.052;
+  const coastLng = -117.32;
+  const eastLng = -116.88;
 
-  const features = centers.map(([cLat, cLng, severity, composite_index, top_species_name], idx) => {
-    // Approximate hexagon polygon
+  function hexRing(cLat, cLng, radiusDeg) {
     const coords = Array.from({ length: 6 }, (_, k) => {
-      const angle = (Math.PI / 3) * k;
-      return [cLng + r * 0.65 * Math.cos(angle), cLat + r * 0.65 * Math.sin(angle)];
+      const angle = (Math.PI / 3) * k - Math.PI / 6;
+      return [cLng + radiusDeg * Math.cos(angle), cLat + radiusDeg * Math.sin(angle)];
     });
-    coords.push(coords[0]); // close polygon
+    coords.push(coords[0]);
+    return coords;
+  }
 
-    return {
-      type: "Feature",
-      geometry: { type: "Polygon", coordinates: [coords] },
-      properties: {
-        h3_cell: `mock_cell_${idx}`,
-        lat: parseFloat(cLat.toFixed(4)),
-        lng: parseFloat(cLng.toFixed(4)),
-        composite_index,
-        severity,
-        top_species_name,
-        top_species_prob: parseFloat((Math.random() * 0.5 + 0.4).toFixed(2)),
-      },
-    };
-  });
+  function classify(composite_index) {
+    if (composite_index >= 4.0) return "very_high";
+    if (composite_index >= 3.0) return "high";
+    if (composite_index >= 2.0) return "moderate";
+    return "low";
+  }
+
+  const features = [];
+  let idx = 0;
+  for (let row = -5; row <= 5; row++) {
+    for (let col = -5; col <= 5; col++) {
+      const dx = col * r * 1.78 + (row % 2) * r * 0.89;
+      const dy = row * r * 1.54;
+      const cLat = lat + dy;
+      const cLng = lng + dx;
+      const dist = Math.hypot(dy * 1.1, dx);
+      if (dist > 0.42) continue;
+
+      const inland = Math.max(0, Math.min(1, (cLng - coastLng) / (eastLng - coastLng)));
+      const composite_index = Math.round((0.55 + inland * 4.35 + (Math.sin(row + col) * 0.15)) * 10) / 10;
+      const severity = classify(composite_index);
+      const top_species_name = composite_index > 3.2 ? "White oak" : composite_index > 1.7 ? "Timothy grass" : "Common ragweed";
+      const top_species_prob = Math.min(0.95, 0.25 + inland * 0.62 + composite_index * 0.05);
+
+      features.push({
+        type: "Feature",
+        geometry: { type: "Polygon", coordinates: [hexRing(cLat, cLng, r * 0.92)] },
+        properties: {
+          h3_cell: `mock_h3_${idx}`,
+          lat: parseFloat(cLat.toFixed(4)),
+          lng: parseFloat(cLng.toFixed(4)),
+          composite_index,
+          severity,
+          top_species_name,
+          top_species_prob: Math.round(top_species_prob * 100) / 100,
+        },
+      });
+      idx += 1;
+    }
+  }
 
   return { type: "FeatureCollection", features };
 }
