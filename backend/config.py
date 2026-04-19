@@ -5,7 +5,15 @@ load_dotenv()
 
 GOOGLE_POLLEN_API_KEY = os.getenv("GOOGLE_POLLEN_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# Generative Language API model id (override if Google deprecates defaults)
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_GENERATE_CONTENT_URL = (
+    "https://generativelanguage.googleapis.com/v1beta/models/"
+    f"{GEMINI_MODEL}:generateContent"
+)
 GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID")
+# Optional: iNaturalist OAuth application id (better rate limits / attribution)
+INAT_APP_ID = os.getenv("INAT_APP_ID")
 
 # H3 resolution 4 = ~22km hexagons (metro-level granularity)
 H3_RESOLUTION = 4
