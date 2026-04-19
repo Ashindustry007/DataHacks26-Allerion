@@ -15,8 +15,8 @@ GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID")
 # Optional: iNaturalist OAuth application id (better rate limits / attribution)
 INAT_APP_ID = os.getenv("INAT_APP_ID")
 
-# H3 resolution 4 = ~22km hexagons (metro-level granularity)
-H3_RESOLUTION = 4
+# H3 resolution 15 = ~0.5m edge hexagons (~1m accuracy)
+H3_RESOLUTION = 15
 
 ALLERGEN_SPECIES = [
     {"taxon_id": 53587, "name": "Common ragweed",      "pollen_type": "weed",  "allergenicity": 5, "google_code": "RAGWEED"},

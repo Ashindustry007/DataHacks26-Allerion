@@ -212,8 +212,9 @@ async def classify_plant_photo(body: PhotoRequest):
 
 @app.get("/api/heatmap")
 async def get_heatmap(lat: float, lng: float, radius_km: float = 30):
-    # radius_km → approximate H3 ring count at resolution 4 (~22km per ring)
-    radius_rings = max(1, int(radius_km / 22))
+    # radius_km → approximate H3 ring count at resolution 15 (~1m per ring)
+    # Cap at 50 rings to keep response size manageable at this fine resolution
+    radius_rings = min(50, max(1, int(radius_km * 1000)))
 
     # Try pre-computed file first (fast path for demo)
     cached_geojson = load_heatmap("heatmap_cache.json")
