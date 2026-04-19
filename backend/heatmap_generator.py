@@ -1,4 +1,5 @@
 import json
+import math
 from pathlib import Path
 
 import h3
@@ -8,68 +9,61 @@ from phenology_engine import compute_day_forecast
 
 _DATA_DIR = Path(__file__).parent / "data"
 
+_HEATMAP_RESOLUTION = 9  # ~175m hexagons — dense local points
 
-def generate_heatmap(center_lat: float, center_lng: float, radius_rings: int = 5) -> dict:
-    """Generate GeoJSON FeatureCollection for H3 cells around a center point."""
-    # Approximate H3 edge length in meters per resolution level
-    H3_EDGE_METERS = {
-        0: 1107712.591, 1: 418676.005, 2: 158244.655, 3: 59810.857,
-        4: 22606.379, 5: 8544.408, 6: 3229.482, 7: 1220.629,
-        8: 461.354, 9: 174.375, 10: 65.907, 11: 24.910,
-        12: 9.415, 13: 3.559, 14: 1.348, 15: 0.509,
-    }
-    resolution_meters = round(H3_EDGE_METERS.get(H3_RESOLUTION, 0), 3)
 
-    center_cell = h3.latlng_to_cell(center_lat, center_lng, H3_RESOLUTION)
-    cells = h3.grid_disk(center_cell, radius_rings)
+def generate_heatmap(center_lat: float, center_lng: float, radius_km: float = 2) -> dict:
+    """Return a flat list of {lat, lng, weight} points within radius_km of center."""
+    # ~175m per hex edge at res 9, ~260m center-to-center
+    rings = max(1, int(radius_km / 0.26))
+    center_cell = h3.latlng_to_cell(center_lat, center_lng, _HEATMAP_RESOLUTION)
+    cells = h3.grid_disk(center_cell, rings)
 
-    features = []
+    forecast = compute_day_forecast(center_lat, center_lng, day_offset=0)
+    base_ci = forecast["composite_index"]
+    top = forecast["top_species"]
+
+    points = []
     for cell in cells:
         lat, lng = h3.cell_to_latlng(cell)
-        boundary = h3.cell_to_boundary(cell)
-        # GeoJSON needs [lng, lat]; h3 returns (lat, lng) pairs
-        coords = [[p[1], p[0]] for p in boundary]
-        coords.append(coords[0])  # close the polygon
-
-        forecast = compute_day_forecast(lat, lng, day_offset=0)
-        top = forecast["top_species"]
-
-        features.append({
-            "type": "Feature",
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [coords],
-            },
-            "properties": {
-                "h3_cell":          cell,
-                "lat":              round(lat, 6),
-                "lng":              round(lng, 6),
-                "composite_index":  forecast["composite_index"],
-                "severity":         forecast["severity"],
-                "top_species_name": top[0]["name"] if top else "None",
-                "top_species_prob": top[0]["pollen_prob"] if top else 0.0,
-            },
+        dlat = (lat - center_lat) * 111.32
+        dlng = (lng - center_lng) * 111.32 * math.cos(math.radians(center_lat))
+        dist_km = math.sqrt(dlat * dlat + dlng * dlng)
+        if dist_km > radius_km:
+            continue
+        # Slight falloff from center so the blob looks natural
+        falloff = max(0.3, 1.0 - (dist_km / radius_km) * 0.5)
+        weight = round(base_ci * falloff / 5.0, 4)
+        points.append({
+            "lat": round(lat, 6),
+            "lng": round(lng, 6),
+            "weight": max(0.01, weight),
         })
 
     return {
-        "type": "FeatureCollection",
-        "features": features,
+        "points": points,
+        "forecast": {
+            "composite_index": base_ci,
+            "severity": forecast["severity"],
+            "top_species_name": top[0]["name"] if top else "None",
+            "top_species_prob": top[0]["pollen_prob"] if top else 0.0,
+        },
         "metadata": {
-            "h3_resolution": H3_RESOLUTION,
-            "resolution_meters": resolution_meters,
-            "total_cells": len(features),
+            "h3_resolution": _HEATMAP_RESOLUTION,
+            "radius_km": radius_km,
+            "total_points": len(points),
             "center": {"lat": center_lat, "lng": center_lng},
         },
     }
 
 
-def save_heatmap(center_lat: float, center_lng: float, filename: str, radius_rings: int = 5) -> None:
-    """Pre-compute and persist heatmap GeoJSON to a file."""
-    geojson = generate_heatmap(center_lat, center_lng, radius_rings)
+def save_heatmap(center_lat: float, center_lng: float, filename: str, radius_km: float = 2) -> None:
+    """Pre-compute and persist heatmap data to a file."""
+    data = generate_heatmap(center_lat, center_lng, radius_km)
     output_path = _DATA_DIR / filename
     with open(output_path, "w") as f:
-        json.dump(geojson, f)
-    print(f"Saved heatmap with {len(geojson['features'])} cells → {output_path}")
+        json.dump(data, f)
+    print(f"Saved heatmap with {len(data['points'])} points → {output_path}")
 
 
 def load_heatmap(filename: str) -> dict | None:

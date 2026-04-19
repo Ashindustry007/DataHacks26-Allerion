@@ -347,6 +347,16 @@ export async function getSpecies() {
   return resp.json();
 }
 
+// Convert backend heatmap response {points: [{lat, lng, weight}]} to Google Maps format.
+export function toGoogleHeatmapData(heatmapResponse) {
+  const pts = heatmapResponse?.points;
+  if (!pts?.length || !window.google) return [];
+  return pts.map(p => ({
+    location: new window.google.maps.LatLng(p.lat, p.lng),
+    weight: p.weight,
+  }));
+}
+
 // Helper: convert a File object to base64 string
 export function fileToBase64(file) {
   return new Promise((resolve, reject) => {
