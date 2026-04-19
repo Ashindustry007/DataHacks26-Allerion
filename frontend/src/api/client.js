@@ -391,6 +391,7 @@ export async function consultantQuery(text, lat, lng) {
      
      return data.candidates[0].content.parts[0].text;
   } catch(e) {
+     console.error("Gemini Chat Error:", e);
      // MOCK fallback if API fails or is blocked
      if (MOCK) {
        await new Promise(r => setTimeout(r, 800));
