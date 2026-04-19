@@ -1,4 +1,4 @@
-# PollenCast
+# Allerion
 
 Species-specific pollen forecasting. Fuses iNaturalist citizen-science observations + Google Pollen API + a real phenology table to produce 14-day, neighborhood-level pollen forecasts per allergen species.
 
