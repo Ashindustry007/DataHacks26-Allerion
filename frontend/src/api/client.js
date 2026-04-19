@@ -424,3 +424,27 @@ export function fileToBase64(file) {
     reader.readAsDataURL(file);
   });
 }
+
+export async function getINaturalistObservations(lat, lng, radiusKm = 10) {
+  // Direct fetch to iNaturalist API (Person B hours 2-6 logic implemented in frontend)
+  const url = `https://api.inaturalist.org/v1/observations?lat=${lat}&lng=${lng}&radius=${radiusKm}&quality_grade=research&per_page=50`;
+  
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`iNat fetch failed: ${resp.status}`);
+    const data = await resp.json();
+    return data.results.map(obs => ({
+      id: obs.id,
+      lat: parseFloat(obs.location.split(',')[0]),
+      lng: parseFloat(obs.location.split(',')[1]),
+      speciesName: obs.taxon?.preferred_common_name || obs.taxon?.name || "Unknown Species",
+      photoUrl: obs.photos?.[0]?.url?.replace('square', 'medium') || null,
+      observedOn: obs.observed_on,
+      wikiUrl: obs.taxon?.wikipedia_url,
+      obscured: obs.obscured || (obs.geoprivacy === 'obscured') 
+    }));
+  } catch (e) {
+    console.warn("iNaturalist API error:", e);
+    return [];
+  }
+}

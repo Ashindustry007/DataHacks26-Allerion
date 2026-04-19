@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, HeatmapLayer } from '@react-google-maps/api';
-import { getForecast } from '../api/client';
-import { getPollenForLocation } from '../api/pollen';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { getForecast, getINaturalistObservations } from '../api/client';
 
 const GOOGLE_MAPS_LIBRARIES = ['visualization', 'places'];
 const DEFAULT_CENTER = { lat: 32.7157, lng: -117.1611 };
@@ -29,12 +28,6 @@ const darkMapStyles = [
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyD4aUoax3vID5wTcGyH1OLzyCebwclWsQ4";
 
 const LAYER_OPTIONS = [
-  { 
-    id: 'CUSTOM_VECTOR', 
-    label: 'Vector Mode (Critical)', 
-    color: 'border-fuchsia-400 text-fuchsia-400', 
-    endpoints: [] 
-  },
   { 
     id: 'ALL_POLLEN', 
     label: 'All Pollen', 
@@ -102,52 +95,69 @@ const Heatmap = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [zipCode, setZipCode] = useState('');
+  
+  // Community iNaturalist state
+  const [showObservations, setShowObservations] = useState(false);
+  const [observations, setObservations] = useState([]);
+  const [selectedObs, setSelectedObs] = useState(null);
+  const [isFetchingObs, setIsFetchingObs] = useState(false);
+  const [filterWater, setFilterWater] = useState(true);
+  const fetchTimeoutRef = useRef(null);
 
-  // Custom Vector state
-  const [vectorPoints, setVectorPoints] = useState([]);
-  const [isScanningGrid, setIsScanningGrid] = useState(false);
-
-  const generateVectorMesh = async () => {
-    if (!map) return;
-    setIsScanningGrid(true);
-    setVectorPoints([]);
-    
-    // Calculate the active bounding grid
-    const bounds = map.getBounds();
-    const ne = bounds.getNorthEast();
-    const sw = bounds.getSouthWest();
-    
-    const latSpan = ne.lat() - sw.lat();
-    const lngSpan = ne.lng() - sw.lng();
-    
-    // Reduce grid to 4x4 (25 coords) to prevent Google API 429 Rate Limiting
-    const gridSteps = 4;
-    const latStep = latSpan / gridSteps;
-    const lngStep = lngSpan / gridSteps;
-
-    const promises = [];
-    // Spawn 64 concurrent API requests for the specific viewport
-    for (let i = 0; i <= gridSteps; i++) {
-        for (let j = 0; j <= gridSteps; j++) {
-            const scanLat = sw.lat() + (latStep * i);
-            const scanLng = sw.lng() + (lngStep * j);
-            
-            promises.push(
-               getPollenForLocation(scanLat, scanLng).then(res => {
-                  // Mathematical threshold: Show anything > 1.0 so the vector layer actually appears visibly
-                  if (res && res.upi >= 1.0) {
-                      return { location: new window.google.maps.LatLng(scanLat, scanLng), weight: res.upi };
+  const fetchObservations = async () => {
+    if (!map || !showObservations) return;
+    setIsFetchingObs(true);
+    try {
+      const gCenter = map.getCenter();
+      // Fetch within a 15km radius of the current map center
+      let data = await getINaturalistObservations(gCenter.lat(), gCenter.lng(), 15);
+      
+      // Land-Lock Protection: Verify all markers via Google Elevation API
+      if (window.google && window.google.maps.ElevationService) {
+          const elevator = new window.google.maps.ElevationService();
+          const locations = data.map(o => ({ lat: o.lat, lng: o.lng }));
+          
+          await new Promise((resolve) => {
+              elevator.getElevationForLocations({ locations }, (results, status) => {
+                  if (status === 'OK' && results) {
+                      data = data.map((o, idx) => ({
+                          ...o,
+                          elevation: results[idx].elevation,
+                          isOnLand: results[idx].elevation > 0.1
+                      }));
                   }
-                  return null;
-               })
-            );
-        }
+                  resolve();
+              });
+          });
+      }
+
+      // Merge results to prevent markers from 'flickering' or disappearing
+      setObservations(prev => {
+        const obsMap = new Map();
+        prev.forEach(o => obsMap.set(o.id, o));
+        data.forEach(o => obsMap.set(o.id, o));
+        return Array.from(obsMap.values());
+      });
+    } catch (e) {
+      console.warn("Could not fetch observations:", e);
+    } finally {
+      setIsFetchingObs(false);
     }
-    
-    const results = await Promise.all(promises);
-    setVectorPoints(results.filter(pt => pt !== null));
-    setIsScanningGrid(false);
   };
+
+  const debouncedFetch = () => {
+    if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
+    fetchTimeoutRef.current = setTimeout(fetchObservations, 400);
+  };
+
+  // Fetch observations whenever toggle is flipped or map settles
+  useEffect(() => {
+    if (showObservations) fetchObservations();
+    else {
+        setObservations([]);
+        setSelectedObs(null);
+    }
+  }, [showObservations]);
 
   const handleZipSearch = () => {
     if (!zipCode || zipCode.trim().length === 0) return;
@@ -243,22 +253,61 @@ const Heatmap = () => {
         zoom={11}
         options={{ disableDefaultUI: true, styles: darkMapStyles, backgroundColor: '#0f172a' }}
         onLoad={m => setMap(m)}
+        onIdle={() => { if (showObservations) debouncedFetch(); }}
       >
-        {activeLayerId === 'CUSTOM_VECTOR' && vectorPoints.length > 0 && (
-           <HeatmapLayer 
-             data={vectorPoints} 
-             options={{
-               radius: 50,
-               opacity: 0.9,
-               gradient: [
-                 'rgba(0,0,0,0)',
-                 '#facc15',
-                 '#fb923c',
-                 '#dc2626',
-                 '#991b1b'
-               ]
-             }} 
-           />
+        {showObservations && observations
+          .filter(obs => !filterWater || (obs.isOnLand !== false)) // Filter if land-lock is active
+          .map(obs => (
+          <Marker
+            key={obs.id}
+            position={{ lat: obs.lat, lng: obs.lng }}
+            onClick={() => setSelectedObs(obs)}
+            icon={{
+              url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+              scaledSize: new window.google.maps.Size(20, 20),
+              anchor: new window.google.maps.Point(10, 10), // Correctly anchor the center of the dot
+              origin: new window.google.maps.Point(0, 0)
+            }}
+          />
+        ))}
+
+        {selectedObs && (
+          <InfoWindow
+            position={{ lat: selectedObs.lat, lng: selectedObs.lng }}
+            onCloseClick={() => setSelectedObs(null)}
+          >
+            <div className="p-1 max-w-[200px] bg-slate-900 border border-slate-700 text-white rounded-lg">
+              {selectedObs.photoUrl && (
+                <img 
+                  src={selectedObs.photoUrl} 
+                  alt={selectedObs.speciesName} 
+                  className="w-full h-24 object-cover rounded mb-2 border border-slate-700" 
+                />
+              )}
+              {selectedObs.isOnLand === false && (
+                <div className="mb-2 px-2 py-1 bg-red-500/20 border border-red-500/50 rounded text-[9px] font-bold text-red-400 flex items-center gap-1">
+                  <span>⚓</span> AQUATIC DETECTED: AUTO-MASKING
+                </div>
+              )}
+              {selectedObs.obscured && !selectedObs.isOnLand === false && (
+                <div className="mb-2 px-2 py-1 bg-amber-500/20 border border-amber-500/50 rounded text-[9px] font-bold text-amber-400 flex items-center gap-1 animate-pulse">
+                  <span>⚠️</span> SIGNAL JITTER: GPS OBSCURED
+                </div>
+              )}
+              <h3 className="text-xs font-bold text-indigo-300 mb-1">{selectedObs.speciesName}</h3>
+              <p className="text-[10px] text-slate-400 font-mono mb-1 capitalize"> Spotted: {selectedObs.observedOn}</p>
+              {selectedObs.wikiUrl && (
+                <a 
+                  href={selectedObs.wikiUrl} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="text-[9px] text-teal-400 underline hover:text-teal-300 transition-colors uppercase font-bold"
+                >
+                  Wiki Reference
+                </a>
+              )}
+            </div>
+          </InfoWindow>
         )}
       </GoogleMap>
 
@@ -276,7 +325,6 @@ const Heatmap = () => {
         {error && (
           <div className="py-4 text-xs text-red-400">{error}</div>
         )}
-
         {/* Dynamic Tile Layer Selector */}
         <div className="shrink-0 pb-6 border-b border-slate-700/50 mb-6 flex flex-col gap-3 relative">
             <p className="text-[10px] font-bold text-indigo-400/90 uppercase tracking-[0.2em]">
@@ -287,10 +335,7 @@ const Heatmap = () => {
               {LAYER_OPTIONS.map(layer => (
                 <button
                   key={layer.id}
-                  onClick={() => {
-                     setActiveLayerId(layer.id);
-                     if (layer.id !== 'CUSTOM_VECTOR') setVectorPoints([]);
-                  }}
+                  onClick={() => setActiveLayerId(activeLayerId === layer.id ? null : layer.id)}
                   className={`py-2 px-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all ${
                      activeLayerId === layer.id 
                        ? `bg-slate-800 ${layer.color} shadow-[0_0_15px_rgba(255,255,255,0.1)]` 
@@ -301,19 +346,48 @@ const Heatmap = () => {
                 </button>
               ))}
             </div>
+        </div>
+        {/* Community Insights Toggle */}
+        <div className="shrink-0 pb-6 border-b border-slate-700/50 mb-6 flex flex-col gap-3 relative">
+            <div className="flex justify-between items-center">
+              <p className="text-[10px] font-bold text-teal-400/90 uppercase tracking-[0.2em]">
+                ▸ Community Insights
+              </p>
+              {isFetchingObs && (
+                <div className="w-3 h-3 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
+              )}
+            </div>
+            <button
+              onClick={() => setShowObservations(!showObservations)}
+              className={`w-full py-2 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all flex items-center justify-between ${
+                 showObservations 
+                   ? 'bg-teal-500/10 border-teal-500/50 text-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.1)]' 
+                   : 'border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300 bg-transparent'
+              }`}
+            >
+              <span>Botanical Sightings</span>
+              <div className={`w-3 h-3 rounded-full border transition-all ${
+                showObservations ? 'bg-teal-400 border-teal-300 scale-110' : 'border-slate-600'
+              }`} />
+            </button>
             
-            {/* Dynamic Vector Trigger */}
-            {activeLayerId === 'CUSTOM_VECTOR' && (
-              <div className="mt-2 pt-3 border-t border-slate-700/50">
-                <button 
-                  onClick={generateVectorMesh}
-                  disabled={isScanningGrid}
-                  className="w-full bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-fuchsia-500/40 transition-colors disabled:opacity-50"
+            {showObservations && (
+                <div 
+                  onClick={() => setFilterWater(!filterWater)}
+                  className="flex items-center gap-2 mt-2 cursor-pointer group"
                 >
-                  {isScanningGrid ? 'Sampling Grid...' : 'Run Vector Scan'}
-                </button>
-              </div>
+                  <div className={`w-3 h-3 rounded border transition-colors ${
+                    filterWater ? 'bg-indigo-500 border-indigo-400' : 'border-slate-600 group-hover:border-slate-500'
+                  }`} />
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider group-hover:text-slate-300">
+                    Filter Aquatic Anomalies
+                  </span>
+                </div>
             )}
+
+            <p className="text-[9px] text-slate-500 italic mt-1 leading-[1.2]">
+              Sourcing research-grade observations from iNaturalist.
+            </p>
         </div>
 
         {/* ZipCode Input */}
