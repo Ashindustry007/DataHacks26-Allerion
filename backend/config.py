@@ -33,7 +33,7 @@ ALLERGEN_SPECIES = [
     {"taxon_id": 60307, "name": "Kentucky bluegrass",   "pollen_type": "grass", "allergenicity": 4, "google_code": "GRAMINALES"},
     {"taxon_id": 49005, "name": "Northern red oak",     "pollen_type": "tree",  "allergenicity": 4, "google_code": "OAK"},
     {"taxon_id": 53034, "name": "Giant ragweed",        "pollen_type": "weed",  "allergenicity": 5, "google_code": "RAGWEED"},
-    {"taxon_id": 52801, "name": "Perennial ryegrass",   "pollen_type": "grass", "allergenicity": 4, "google_code": "GRAMINALES"},
+    {"taxon_id": 52801, "name": "Perennial ryegrass",   "pollen_type": "grass", "allergenicity": 4, "google_code": "GRAMINALES"}
 ]
 
 # Map Google plant codes to taxon IDs for fusion
