@@ -1,5 +1,5 @@
 // Set MOCK=true for independent frontend dev without a running backend
-const MOCK = false;
+const MOCK = true;
 
 // ---------------------------------------------------------------------------
 // Mock data — matches the ForecastResponse API contract exactly

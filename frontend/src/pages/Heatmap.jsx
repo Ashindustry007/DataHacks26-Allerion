@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, HeatmapLayer } from '@react-google-maps/api';
-import { getHeatmap, getForecast } from '../api/client';
+import { getForecast } from '../api/client';
+import { getPollenForLocation } from '../api/pollen';
 
-const GOOGLE_MAPS_LIBRARIES = ['visualization'];
+const GOOGLE_MAPS_LIBRARIES = ['visualization', 'places'];
 const DEFAULT_CENTER = { lat: 32.7157, lng: -117.1611 };
 
+// Cyperbunk tech noir base map styling
 const darkMapStyles = [
   { elementType: 'geometry', stylers: [{ color: '#1e293b' }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#0f172a' }] },
@@ -24,35 +26,43 @@ const darkMapStyles = [
   { featureType: 'water', elementType: 'labels.text.stroke', stylers: [{ color: '#0f172a' }] },
 ];
 
-// Extract polygon centroid from GeoJSON coordinates [[[lng, lat], ...]]
-function polygonCentroid(coords) {
-  const ring = coords[0];
-  const n = ring.length - 1; // last point closes the ring, skip it
-  let lng = 0, lat = 0;
-  for (let i = 0; i < n; i++) {
-    lng += ring[i][0];
-    lat += ring[i][1];
-  }
-  return { lat: lat / n, lng: lng / n };
-}
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyD4aUoax3vID5wTcGyH1OLzyCebwclWsQ4";
 
-// Convert backend GeoJSON FeatureCollection to Google Maps weighted LatLng points
-function geojsonToHeatmapPoints(geojson) {
-  if (!window.google?.maps || !geojson?.features) return [];
-  return geojson.features
-    .filter(f => f.geometry?.type === 'Polygon')
-    .map(f => {
-      const { lat, lng } = polygonCentroid(f.geometry.coordinates);
-      const weight = Math.max(0.05, (f.properties.composite_index || 0) / 5);
-      return { location: new window.google.maps.LatLng(lat, lng), weight };
-    });
-}
+const LAYER_OPTIONS = [
+  { 
+    id: 'CUSTOM_VECTOR', 
+    label: 'Vector Mode (Critical)', 
+    color: 'border-fuchsia-400 text-fuchsia-400', 
+    endpoints: [] 
+  },
+  { 
+    id: 'ALL_POLLEN', 
+    label: 'All Pollen', 
+    color: 'border-purple-400 text-purple-400', 
+    endpoints: [
+      'https://pollen.googleapis.com/v1/mapTypes/TREE_UPI/heatmapTiles',
+      'https://pollen.googleapis.com/v1/mapTypes/GRASS_UPI/heatmapTiles',
+      'https://pollen.googleapis.com/v1/mapTypes/WEED_UPI/heatmapTiles'
+    ] 
+  },
+  { id: 'TREE_UPI', label: 'Trees', color: 'border-emerald-500 text-emerald-400', endpoints: ['https://pollen.googleapis.com/v1/mapTypes/TREE_UPI/heatmapTiles'] },
+  { id: 'GRASS_UPI', label: 'Grass', color: 'border-yellow-400 text-yellow-500', endpoints: ['https://pollen.googleapis.com/v1/mapTypes/GRASS_UPI/heatmapTiles'] },
+  { id: 'WEED_UPI', label: 'Weeds', color: 'border-red-400 text-red-500', endpoints: ['https://pollen.googleapis.com/v1/mapTypes/WEED_UPI/heatmapTiles'] },
+  { id: 'UAQI_RED_GREEN', label: 'Air Quality', color: 'border-cyan-400 text-cyan-400', endpoints: ['https://airquality.googleapis.com/v1/mapTypes/UAQI_RED_GREEN/heatmapTiles'] }
+];
+
+const SEVERITY_COLOR = {
+  low: 'text-emerald-400',
+  moderate: 'text-yellow-400',
+  high: 'text-amber-400',
+  very_high: 'text-red-400',
+};
 
 // Derive tree/grass/weed severity labels from top_species list
 function typeBreakdown(topSpecies = []) {
   const best = {};
   for (const sp of topSpecies) {
-    const t = sp.pollen_type; // 'tree' | 'grass' | 'weed'
+    const t = sp.pollen_type;
     if (!best[t] || sp.pollen_index > best[t]) best[t] = sp.pollen_index;
   }
   const label = (idx) => {
@@ -76,29 +86,68 @@ function typeBreakdown(topSpecies = []) {
   ];
 }
 
-const SEVERITY_COLOR = {
-  low: 'text-emerald-400',
-  moderate: 'text-yellow-400',
-  high: 'text-amber-400',
-  very_high: 'text-red-400',
-};
-
 const Heatmap = () => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
+  const [map, setMap] = useState(null);
   const [center, setCenter] = useState(DEFAULT_CENTER);
-  const [heatmapPoints, setHeatmapPoints] = useState([]);
+  
+  const [activeLayerId, setActiveLayerId] = useState('ALL_POLLEN');
+
   const [forecast, setForecast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Holds GeoJSON until Maps SDK is ready to convert it
-  const geojsonRef = useRef(null);
-
   const [zipCode, setZipCode] = useState('');
+
+  // Custom Vector state
+  const [vectorPoints, setVectorPoints] = useState([]);
+  const [isScanningGrid, setIsScanningGrid] = useState(false);
+
+  const generateVectorMesh = async () => {
+    if (!map) return;
+    setIsScanningGrid(true);
+    setVectorPoints([]);
+    
+    // Calculate the active bounding grid
+    const bounds = map.getBounds();
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+    
+    const latSpan = ne.lat() - sw.lat();
+    const lngSpan = ne.lng() - sw.lng();
+    
+    // Reduce grid to 4x4 (25 coords) to prevent Google API 429 Rate Limiting
+    const gridSteps = 4;
+    const latStep = latSpan / gridSteps;
+    const lngStep = lngSpan / gridSteps;
+
+    const promises = [];
+    // Spawn 64 concurrent API requests for the specific viewport
+    for (let i = 0; i <= gridSteps; i++) {
+        for (let j = 0; j <= gridSteps; j++) {
+            const scanLat = sw.lat() + (latStep * i);
+            const scanLng = sw.lng() + (lngStep * j);
+            
+            promises.push(
+               getPollenForLocation(scanLat, scanLng).then(res => {
+                  // Mathematical threshold: Show anything > 1.0 so the vector layer actually appears visibly
+                  if (res && res.upi >= 1.0) {
+                      return { location: new window.google.maps.LatLng(scanLat, scanLng), weight: res.upi };
+                  }
+                  return null;
+               })
+            );
+        }
+    }
+    
+    const results = await Promise.all(promises);
+    setVectorPoints(results.filter(pt => pt !== null));
+    setIsScanningGrid(false);
+  };
 
   const handleZipSearch = () => {
     if (!zipCode || zipCode.trim().length === 0) return;
@@ -124,46 +173,45 @@ const Heatmap = () => {
     );
   }, []);
 
-  // Fetch heatmap GeoJSON + forecast when center is known
+  // Fetch forecast when center is known
   useEffect(() => {
     setLoading(true);
     setError(null);
-    Promise.all([
-      getHeatmap(center.lat, center.lng, 30),
-      getForecast(center.lat, center.lng),
-    ])
-      .then(([geojson, fc]) => {
-        geojsonRef.current = geojson;
+    getForecast(center.lat, center.lng)
+      .then((fc) => {
         setForecast(fc);
         setLoading(false);
-        if (isLoaded) {
-          setHeatmapPoints(geojsonToHeatmapPoints(geojson));
-        }
       })
       .catch(err => {
         setError(err.message || 'Failed to load data');
         setLoading(false);
       });
-  }, [center]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [center]);
 
-  // Convert GeoJSON once Maps SDK becomes ready (may lag behind fetch)
+  // Insert Native Image Tiles into Google Map
   useEffect(() => {
-    if (isLoaded && geojsonRef.current) {
-      setHeatmapPoints(geojsonToHeatmapPoints(geojsonRef.current));
-    }
-  }, [isLoaded]);
+    if (!map || !isLoaded) return;
+    
+    map.overlayMapTypes.clear();
 
-  const heatmapOptions = useMemo(() => ({
-    radius: 35,
-    opacity: 0.82,
-    gradient: [
-      'rgba(0,0,0,0)',
-      '#4ade80',
-      '#facc15',
-      '#fb923c',
-      '#dc2626',
-    ],
-  }), []);
+    const layerConf = LAYER_OPTIONS.find(l => l.id === activeLayerId);
+    if (!layerConf || layerConf.endpoints.length === 0) return;
+
+    layerConf.endpoints.forEach(endpoint => {
+      const imageMapType = new window.google.maps.ImageMapType({
+        getTileUrl: function(coord, zoom) {
+          return `${endpoint}/${zoom}/${coord.x}/${coord.y}?key=${API_KEY}`;
+        },
+        tileSize: new window.google.maps.Size(256, 256),
+        maxZoom: 16,
+        minZoom: 0,
+        opacity: 0.7,
+        name: layerConf.label
+      });
+
+      map.overlayMapTypes.push(imageMapType);
+    });
+  }, [map, isLoaded, activeLayerId]);
 
   const today = forecast?.daily?.[0];
   const narrative = forecast?.narrative || {};
@@ -187,32 +235,86 @@ const Heatmap = () => {
 
   return (
     <div className="relative h-screen w-screen bg-slate-900 overflow-hidden">
-
+      
+      {/* ── Native Google Maps Layer ── */}
       <GoogleMap
         mapContainerStyle={{ width: '100vw', height: '100vh' }}
         center={center}
         zoom={11}
         options={{ disableDefaultUI: true, styles: darkMapStyles, backgroundColor: '#0f172a' }}
+        onLoad={m => setMap(m)}
       >
-        {heatmapPoints.length > 0 && (
-          <HeatmapLayer data={heatmapPoints} options={heatmapOptions} />
+        {activeLayerId === 'CUSTOM_VECTOR' && vectorPoints.length > 0 && (
+           <HeatmapLayer 
+             data={vectorPoints} 
+             options={{
+               radius: 50,
+               opacity: 0.9,
+               gradient: [
+                 'rgba(0,0,0,0)',
+                 '#facc15',
+                 '#fb923c',
+                 '#dc2626',
+                 '#991b1b'
+               ]
+             }} 
+           />
         )}
       </GoogleMap>
 
-      {/* Left sidebar */}
+      {/* ── Left sidebar ── */}
       <div className={`absolute top-24 left-6 z-[1000] flex flex-col w-[300px] md:w-[340px] max-h-[calc(100vh-8rem)] pointer-events-auto overflow-y-auto scrollbar-none ${glassStyle}`}>
 
         {/* Loading overlay */}
         {loading && (
           <div className="flex items-center gap-3 py-4">
             <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-            <span className="text-xs text-slate-400 font-mono">Fetching pollen mesh…</span>
+            <span className="text-xs text-slate-400 font-mono">Calibrating regional sensors…</span>
           </div>
         )}
 
         {error && (
           <div className="py-4 text-xs text-red-400">{error}</div>
         )}
+
+        {/* Dynamic Tile Layer Selector */}
+        <div className="shrink-0 pb-6 border-b border-slate-700/50 mb-6 flex flex-col gap-3 relative">
+            <p className="text-[10px] font-bold text-indigo-400/90 uppercase tracking-[0.2em]">
+              <span className="w-2 h-2 inline-block rounded-full bg-indigo-400 animate-pulse mr-2"></span>
+              Live Feed Options
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {LAYER_OPTIONS.map(layer => (
+                <button
+                  key={layer.id}
+                  onClick={() => {
+                     setActiveLayerId(layer.id);
+                     if (layer.id !== 'CUSTOM_VECTOR') setVectorPoints([]);
+                  }}
+                  className={`py-2 px-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all ${
+                     activeLayerId === layer.id 
+                       ? `bg-slate-800 ${layer.color} shadow-[0_0_15px_rgba(255,255,255,0.1)]` 
+                       : 'border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300 bg-transparent'
+                  }`}
+                >
+                  {layer.label}
+                </button>
+              ))}
+            </div>
+            
+            {/* Dynamic Vector Trigger */}
+            {activeLayerId === 'CUSTOM_VECTOR' && (
+              <div className="mt-2 pt-3 border-t border-slate-700/50">
+                <button 
+                  onClick={generateVectorMesh}
+                  disabled={isScanningGrid}
+                  className="w-full bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-fuchsia-500/40 transition-colors disabled:opacity-50"
+                >
+                  {isScanningGrid ? 'Sampling Grid...' : 'Run Vector Scan'}
+                </button>
+              </div>
+            )}
+        </div>
 
         {/* ZipCode Input */}
         <div className="shrink-0 pb-6 border-b border-slate-700/50 mb-6 flex flex-col gap-2 relative">
@@ -240,7 +342,7 @@ const Heatmap = () => {
         {!loading && today && (
           <div className="shrink-0 pb-6 border-b border-slate-700/50 mb-6">
             <p className="text-[10px] font-bold text-indigo-400/90 uppercase tracking-[0.2em] mb-3">
-              ▸ Current Pollen Index
+              ▸ Current Exposure
             </p>
 
             <div className="flex items-end gap-3 mb-2">
