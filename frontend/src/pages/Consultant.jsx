@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { classifyPhoto, fileToBase64 } from '../api/client';
 
 // ── Icons (Raw SVGs) ────────────────────────────────────────────────────────
 const LeafIcon = ({ className }) => (
@@ -50,23 +49,13 @@ const Consultant = () => {
   const messagesEndRef = useRef(null);
 
   const [input, setInput] = useState('');
-  const [userPos, setUserPos] = useState([32.71, -117.16]);
   const [messages, setMessages] = useState([
     {
       id: 1,
       sender: 'ai',
-      text: "Welcome to your personal AI Allergy Consultant. Upload a plant photo for instant species and pollen threat analysis, or ask me to draft safe travel advisories based on your clinical profile.",
-    },
-  ]);
-
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => setUserPos([pos.coords.latitude, pos.coords.longitude]),
-        () => {},
-      );
+      text: "Welcome to your personal AI Allergy Consultant. Upload a plant photo for instant species and pollen threat analysis, or ask me to draft safe travel advisories based on your clinical profile."
     }
-  }, []);
+  ]);
 
   // Deep glassmorphism preset
   const glassPanel = "bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]";
@@ -92,49 +81,22 @@ const Consultant = () => {
     }, 1200);
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
-
-    const imageUrl = URL.createObjectURL(file);
-    const userMsg = { id: Date.now(), sender: 'user', imageUrl };
-    setMessages(prev => [...prev, userMsg]);
-
-    const thinkingId = Date.now() + 1;
-    setMessages(prev => [...prev, { id: thinkingId, sender: 'ai', text: '🔬 Analyzing plant…' }]);
-
-    try {
-      const base64 = await fileToBase64(file);
-      const [lat, lng] = userPos;
-      const result = await classifyPhoto(base64, lat, lng);
-
-      const allergenNote = result.is_allergen
-        ? `⚠ This is a known allergen (confidence: ${Math.round(result.confidence * 100)}%).`
-        : `✓ This species is not a major allergen.`;
-      const stageNote = `Current stage: ${result.phenology_stage.replace(/_/g, ' ')}.`;
-      const pollenNote = result.pollen_releasing
-        ? 'It is actively releasing pollen — limit your outdoor exposure.'
-        : 'It is not currently releasing pollen.';
-
-      const text = [
-        `Identified: ${result.species_name}. ${allergenNote}`,
-        stageNote,
-        pollenNote,
-        result.explanation,
-        result.action,
-      ].filter(Boolean).join('\n\n');
-
-      setMessages(prev =>
-        prev.map(m => m.id === thinkingId ? { ...m, text } : m)
-      );
-    } catch (err) {
-      setMessages(prev =>
-        prev.map(m =>
-          m.id === thinkingId
-            ? { ...m, text: `Classification failed: ${err.message || 'Unknown error'}. Try a clearer photo.` }
-            : m
-        )
-      );
+  const handleImageUpload = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const imageUrl = URL.createObjectURL(file);
+      
+      const userMsg = { id: Date.now(), sender: 'user', imageUrl };
+      setMessages(prev => [...prev, userMsg]);
+      
+      setTimeout(() => {
+        const aiMsg = { 
+          id: Date.now() + 1, 
+          sender: 'ai', 
+          text: "Image received and processed. This is a mature Oak tree. It is currently in heavy pollination phase. Based on your personalized defense configuration, this represents a **SEVERE** threat in your sector. Limit outdoor exposure." 
+        };
+        setMessages(prev => [...prev, aiMsg]);
+      }, 1500);
     }
   };
 
