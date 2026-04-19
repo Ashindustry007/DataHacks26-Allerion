@@ -25,7 +25,9 @@ const Navbar = () => {
 
       <div className="hidden md:flex items-center gap-8 text-xs font-semibold tracking-[0.15em] uppercase text-slate-400">
         <Link to="/heatmap" className="hover:text-teal-400 transition-colors">Live Map</Link>
+        <Link to="/forecast" className="hover:text-cyan-400 transition-colors">Forecast</Link>
         <Link to="/dashboard" className="hover:text-orange-400 transition-colors">My Profile</Link>
+        <Link to="/photo" className="hover:text-teal-300 transition-colors">Identify Plant</Link>
         <Link to="/consultant" className="hover:text-yellow-400 transition-colors">AI Consultant</Link>
       </div>
 
