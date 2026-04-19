@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { X, ArrowUp } from 'lucide-react';
 import { getForecast, getHeatmap } from '../api/client';
 
-const SD_CENTER = [32.71, -117.16];
+const SD_FALLBACK = [32.71, -117.16];
 
 // Continuous severity gradient (composite_index 0 → 5)
 function colorFromCompositeIndex(v) {
@@ -237,15 +237,32 @@ function ProfileDrawer({ onClose }) {
 // ---------------------------------------------------------------------------
 
 export default function Dashboard() {
+  const [center, setCenter] = useState(SD_FALLBACK);
+  const [geolocating, setGeolocating] = useState(true);
   const [forecast, setForecast] = useState(null);
   const [geojson, setGeojson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Resolve user position once; fall back to San Diego after 5s
   useEffect(() => {
-    const lat = SD_CENTER[0];
-    const lng = SD_CENTER[1];
+    if (!navigator.geolocation) { setGeolocating(false); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setCenter([pos.coords.latitude, pos.coords.longitude]);
+        setGeolocating(false);
+      },
+      () => setGeolocating(false),
+      { timeout: 5000 },
+    );
+  }, []);
+
+  // Fetch when geolocation resolves
+  useEffect(() => {
+    if (geolocating) return;
+    const [lat, lng] = center;
+    setLoading(true);
     Promise.all([getForecast(lat, lng), getHeatmap(lat, lng, 30)])
       .then(([fc, hm]) => {
         setForecast(fc);
@@ -256,7 +273,7 @@ export default function Dashboard() {
         setError(err.message || 'Failed to load');
         setLoading(false);
       });
-  }, []);
+  }, [geolocating]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const daily = forecast?.daily || [];
   const today = daily[0];
@@ -305,12 +322,12 @@ export default function Dashboard() {
       {/* Full-bleed map */}
       <div className="absolute inset-0 z-0">
         {!loading && (
-          <MapContainer center={SD_CENTER} zoom={10} className="h-full w-full" zoomControl={false} attributionControl={false}>
+          <MapContainer center={center} zoom={10} className="h-full w-full" zoomControl={false} attributionControl={false}>
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
               attribution=""
             />
-            {geojson && (
+            {geojson?.type === 'FeatureCollection' && (
               <GeoJSON data={geojson} style={geoJsonStyle} onEachFeature={onEachHex} />
             )}
             <Marker position={[32.715, -117.162]} icon={downtownPin} />

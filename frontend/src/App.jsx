@@ -1,11 +1,12 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import ProfileSetup from './pages/ProfileSetup';
 import Dashboard from './pages/Dashboard';
 import Heatmap from './pages/Heatmap';
 import Consultant from './pages/Consultant';
+import PhotoUpload from './pages/PhotoUpload';
 
 const AppContent = () => {
   return (
@@ -14,8 +15,10 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/dashboard" element={<ProfileSetup />} />
+        <Route path="/forecast" element={<Dashboard />} />
         <Route path="/heatmap" element={<Heatmap />} />
         <Route path="/consultant" element={<Consultant />} />
+        <Route path="/photo" element={<PhotoUpload />} />
       </Routes>
     </div>
   );
