@@ -1,3 +1,8 @@
 gcp_service_account_key.json
 ece143-489600-1f19396bc1d5.json
 .env
+backend/__pycache__/
+backend/main.py
+backend/gemini_agents.py
+backend/photo_classifier.py
+backend/tests/__pycache__/__init__.py
