@@ -1,167 +1,467 @@
 {
-  "48678": {
+  "53587": {
     "name": "Common ragweed",
     "pollen_type": "weed",
     "lat_bands": {
-      "25-30": {"onset_doy": 195, "peak_doy": 230, "duration": 55},
-      "30-35": {"onset_doy": 205, "peak_doy": 240, "duration": 50},
-      "35-40": {"onset_doy": 215, "peak_doy": 250, "duration": 45},
-      "40-45": {"onset_doy": 225, "peak_doy": 258, "duration": 40},
-      "45-50": {"onset_doy": 232, "peak_doy": 263, "duration": 35}
+      "25-30": {
+        "onset_doy": 195,
+        "peak_doy": 230,
+        "duration": 55
+      },
+      "30-35": {
+        "onset_doy": 214,
+        "peak_doy": 249,
+        "duration": 56
+      },
+      "35-40": {
+        "onset_doy": 220,
+        "peak_doy": 242,
+        "duration": 46
+      },
+      "40-45": {
+        "onset_doy": 209,
+        "peak_doy": 228,
+        "duration": 46
+      },
+      "45-50": {
+        "onset_doy": 207,
+        "peak_doy": 226,
+        "duration": 47
+      }
     }
   },
-  "56928": {
+  "54779": {
     "name": "White oak",
     "pollen_type": "tree",
     "lat_bands": {
-      "25-30": {"onset_doy": 55,  "peak_doy": 80,  "duration": 30},
-      "30-35": {"onset_doy": 70,  "peak_doy": 95,  "duration": 28},
-      "35-40": {"onset_doy": 85,  "peak_doy": 110, "duration": 26},
-      "40-45": {"onset_doy": 100, "peak_doy": 125, "duration": 24},
-      "45-50": {"onset_doy": 115, "peak_doy": 138, "duration": 22}
+      "25-30": {
+        "onset_doy": 55,
+        "peak_doy": 80,
+        "duration": 30
+      },
+      "30-35": {
+        "onset_doy": 70,
+        "peak_doy": 95,
+        "duration": 28
+      },
+      "35-40": {
+        "onset_doy": 94,
+        "peak_doy": 117,
+        "duration": 40
+      },
+      "40-45": {
+        "onset_doy": 117,
+        "peak_doy": 135,
+        "duration": 33
+      },
+      "45-50": {
+        "onset_doy": 130,
+        "peak_doy": 141,
+        "duration": 32
+      }
     }
   },
-  "48734": {
+  "49883": {
     "name": "Paper birch",
     "pollen_type": "tree",
     "lat_bands": {
-      "25-30": {"onset_doy": 50,  "peak_doy": 72,  "duration": 25},
-      "30-35": {"onset_doy": 62,  "peak_doy": 85,  "duration": 22},
-      "35-40": {"onset_doy": 78,  "peak_doy": 100, "duration": 20},
-      "40-45": {"onset_doy": 95,  "peak_doy": 115, "duration": 18},
-      "45-50": {"onset_doy": 110, "peak_doy": 128, "duration": 16}
+      "25-30": {
+        "onset_doy": 50,
+        "peak_doy": 72,
+        "duration": 25
+      },
+      "30-35": {
+        "onset_doy": 62,
+        "peak_doy": 85,
+        "duration": 22
+      },
+      "35-40": {
+        "onset_doy": 78,
+        "peak_doy": 100,
+        "duration": 20
+      },
+      "40-45": {
+        "onset_doy": 66,
+        "peak_doy": 116,
+        "duration": 71
+      },
+      "45-50": {
+        "onset_doy": 41,
+        "peak_doy": 150,
+        "duration": 90
+      }
     }
   },
-  "49085": {
+  "49399": {
     "name": "Eastern red cedar",
     "pollen_type": "tree",
     "lat_bands": {
-      "25-30": {"onset_doy": 10,  "peak_doy": 30,  "duration": 40},
-      "30-35": {"onset_doy": 15,  "peak_doy": 35,  "duration": 38},
-      "35-40": {"onset_doy": 20,  "peak_doy": 45,  "duration": 35},
-      "40-45": {"onset_doy": 25,  "peak_doy": 55,  "duration": 30},
-      "45-50": {"onset_doy": 35,  "peak_doy": 65,  "duration": 25}
+      "25-30": {
+        "onset_doy": 10,
+        "peak_doy": 30,
+        "duration": 40
+      },
+      "30-35": {
+        "onset_doy": 15,
+        "peak_doy": 35,
+        "duration": 38
+      },
+      "35-40": {
+        "onset_doy": 20,
+        "peak_doy": 45,
+        "duration": 35
+      },
+      "40-45": {
+        "onset_doy": 25,
+        "peak_doy": 55,
+        "duration": 30
+      },
+      "45-50": {
+        "onset_doy": 35,
+        "peak_doy": 65,
+        "duration": 25
+      }
     }
   },
-  "64727": {
+  "57190": {
     "name": "Timothy grass",
     "pollen_type": "grass",
     "lat_bands": {
-      "25-30": {"onset_doy": 100, "peak_doy": 130, "duration": 45},
-      "30-35": {"onset_doy": 115, "peak_doy": 145, "duration": 42},
-      "35-40": {"onset_doy": 130, "peak_doy": 158, "duration": 38},
-      "40-45": {"onset_doy": 145, "peak_doy": 170, "duration": 35},
-      "45-50": {"onset_doy": 158, "peak_doy": 182, "duration": 30}
+      "25-30": {
+        "onset_doy": 100,
+        "peak_doy": 130,
+        "duration": 45
+      },
+      "30-35": {
+        "onset_doy": 115,
+        "peak_doy": 145,
+        "duration": 42
+      },
+      "35-40": {
+        "onset_doy": 167,
+        "peak_doy": 185,
+        "duration": 53
+      },
+      "40-45": {
+        "onset_doy": 168,
+        "peak_doy": 184,
+        "duration": 51
+      },
+      "45-50": {
+        "onset_doy": 169,
+        "peak_doy": 184,
+        "duration": 57
+      }
     }
   },
-  "49095": {
-    "name": "White ash",
+  "54808": {
+    "name": "Green ash",
     "pollen_type": "tree",
     "lat_bands": {
-      "25-30": {"onset_doy": 60,  "peak_doy": 85,  "duration": 28},
-      "30-35": {"onset_doy": 72,  "peak_doy": 95,  "duration": 26},
-      "35-40": {"onset_doy": 88,  "peak_doy": 110, "duration": 24},
-      "40-45": {"onset_doy": 102, "peak_doy": 125, "duration": 22},
-      "45-50": {"onset_doy": 118, "peak_doy": 140, "duration": 20}
+      "25-30": {
+        "onset_doy": 60,
+        "peak_doy": 85,
+        "duration": 28
+      },
+      "30-35": {
+        "onset_doy": 72,
+        "peak_doy": 95,
+        "duration": 26
+      },
+      "35-40": {
+        "onset_doy": 88,
+        "peak_doy": 110,
+        "duration": 24
+      },
+      "40-45": {
+        "onset_doy": 105,
+        "peak_doy": 120,
+        "duration": 35
+      },
+      "45-50": {
+        "onset_doy": 118,
+        "peak_doy": 118,
+        "duration": 20
+      }
     }
   },
-  "54772": {
+  "53547": {
     "name": "American elm",
     "pollen_type": "tree",
     "lat_bands": {
-      "25-30": {"onset_doy": 40,  "peak_doy": 62,  "duration": 25},
-      "30-35": {"onset_doy": 52,  "peak_doy": 72,  "duration": 23},
-      "35-40": {"onset_doy": 65,  "peak_doy": 85,  "duration": 21},
-      "40-45": {"onset_doy": 80,  "peak_doy": 100, "duration": 19},
-      "45-50": {"onset_doy": 95,  "peak_doy": 113, "duration": 17}
+      "25-30": {
+        "onset_doy": 40,
+        "peak_doy": 62,
+        "duration": 25
+      },
+      "30-35": {
+        "onset_doy": 37,
+        "peak_doy": 54,
+        "duration": 29
+      },
+      "35-40": {
+        "onset_doy": 63,
+        "peak_doy": 71,
+        "duration": 22
+      },
+      "40-45": {
+        "onset_doy": 67,
+        "peak_doy": 93,
+        "duration": 54
+      },
+      "45-50": {
+        "onset_doy": 82,
+        "peak_doy": 108,
+        "duration": 49
+      }
     }
   },
-  "53548": {
+  "52119": {
     "name": "Eastern cottonwood",
     "pollen_type": "tree",
     "lat_bands": {
-      "25-30": {"onset_doy": 55,  "peak_doy": 78,  "duration": 28},
-      "30-35": {"onset_doy": 68,  "peak_doy": 90,  "duration": 26},
-      "35-40": {"onset_doy": 82,  "peak_doy": 105, "duration": 24},
-      "40-45": {"onset_doy": 97,  "peak_doy": 120, "duration": 22},
-      "45-50": {"onset_doy": 112, "peak_doy": 133, "duration": 20}
+      "25-30": {
+        "onset_doy": 62,
+        "peak_doy": 86,
+        "duration": 56
+      },
+      "30-35": {
+        "onset_doy": 51,
+        "peak_doy": 74,
+        "duration": 76
+      },
+      "35-40": {
+        "onset_doy": 79,
+        "peak_doy": 102,
+        "duration": 54
+      },
+      "40-45": {
+        "onset_doy": 96,
+        "peak_doy": 111,
+        "duration": 32
+      },
+      "45-50": {
+        "onset_doy": 107,
+        "peak_doy": 118,
+        "duration": 19
+      }
     }
   },
-  "52823": {
+  "57140": {
     "name": "Olive",
     "pollen_type": "tree",
     "lat_bands": {
-      "25-30": {"onset_doy": 100, "peak_doy": 125, "duration": 25},
-      "30-35": {"onset_doy": 112, "peak_doy": 135, "duration": 23},
-      "35-40": {"onset_doy": 125, "peak_doy": 148, "duration": 21},
-      "40-45": {"onset_doy": 138, "peak_doy": 162, "duration": 19},
-      "45-50": {"onset_doy": 152, "peak_doy": 175, "duration": 17}
+      "25-30": {
+        "onset_doy": 100,
+        "peak_doy": 125,
+        "duration": 25
+      },
+      "30-35": {
+        "onset_doy": 77,
+        "peak_doy": 121,
+        "duration": 57
+      },
+      "35-40": {
+        "onset_doy": 78,
+        "peak_doy": 125,
+        "duration": 87
+      },
+      "40-45": {
+        "onset_doy": 138,
+        "peak_doy": 162,
+        "duration": 19
+      },
+      "45-50": {
+        "onset_doy": 152,
+        "peak_doy": 175,
+        "duration": 17
+      }
     }
   },
-  "52853": {
+  "52856": {
     "name": "Common mugwort",
     "pollen_type": "weed",
     "lat_bands": {
-      "25-30": {"onset_doy": 185, "peak_doy": 220, "duration": 50},
-      "30-35": {"onset_doy": 195, "peak_doy": 228, "duration": 48},
-      "35-40": {"onset_doy": 205, "peak_doy": 238, "duration": 45},
-      "40-45": {"onset_doy": 215, "peak_doy": 245, "duration": 42},
-      "45-50": {"onset_doy": 225, "peak_doy": 252, "duration": 38}
+      "25-30": {
+        "onset_doy": 185,
+        "peak_doy": 220,
+        "duration": 50
+      },
+      "30-35": {
+        "onset_doy": 195,
+        "peak_doy": 228,
+        "duration": 48
+      },
+      "35-40": {
+        "onset_doy": 239,
+        "peak_doy": 255,
+        "duration": 31
+      },
+      "40-45": {
+        "onset_doy": 226,
+        "peak_doy": 254,
+        "duration": 60
+      },
+      "45-50": {
+        "onset_doy": 189,
+        "peak_doy": 210,
+        "duration": 52
+      }
     }
   },
-  "48513": {
+  "56034": {
     "name": "Red alder",
     "pollen_type": "tree",
     "lat_bands": {
-      "25-30": {"onset_doy": 15,  "peak_doy": 38,  "duration": 35},
-      "30-35": {"onset_doy": 20,  "peak_doy": 45,  "duration": 33},
-      "35-40": {"onset_doy": 28,  "peak_doy": 55,  "duration": 30},
-      "40-45": {"onset_doy": 38,  "peak_doy": 65,  "duration": 28},
-      "45-50": {"onset_doy": 50,  "peak_doy": 78,  "duration": 25}
+      "25-30": {
+        "onset_doy": 15,
+        "peak_doy": 38,
+        "duration": 35
+      },
+      "30-35": {
+        "onset_doy": 20,
+        "peak_doy": 45,
+        "duration": 33
+      },
+      "35-40": {
+        "onset_doy": 15,
+        "peak_doy": 108,
+        "duration": 90
+      },
+      "40-45": {
+        "onset_doy": 29,
+        "peak_doy": 119,
+        "duration": 90
+      },
+      "45-50": {
+        "onset_doy": 37,
+        "peak_doy": 99,
+        "duration": 82
+      }
     }
   },
-  "64698": {
+  "60307": {
     "name": "Kentucky bluegrass",
     "pollen_type": "grass",
     "lat_bands": {
-      "25-30": {"onset_doy": 90,  "peak_doy": 120, "duration": 45},
-      "30-35": {"onset_doy": 102, "peak_doy": 132, "duration": 42},
-      "35-40": {"onset_doy": 115, "peak_doy": 145, "duration": 38},
-      "40-45": {"onset_doy": 130, "peak_doy": 158, "duration": 35},
-      "45-50": {"onset_doy": 145, "peak_doy": 170, "duration": 30}
+      "25-30": {
+        "onset_doy": 90,
+        "peak_doy": 120,
+        "duration": 45
+      },
+      "30-35": {
+        "onset_doy": 102,
+        "peak_doy": 132,
+        "duration": 42
+      },
+      "35-40": {
+        "onset_doy": 114,
+        "peak_doy": 130,
+        "duration": 36
+      },
+      "40-45": {
+        "onset_doy": 120,
+        "peak_doy": 146,
+        "duration": 34
+      },
+      "45-50": {
+        "onset_doy": 136,
+        "peak_doy": 153,
+        "duration": 79
+      }
     }
   },
-  "56891": {
+  "49005": {
     "name": "Northern red oak",
     "pollen_type": "tree",
     "lat_bands": {
-      "25-30": {"onset_doy": 65,  "peak_doy": 90,  "duration": 28},
-      "30-35": {"onset_doy": 78,  "peak_doy": 102, "duration": 26},
-      "35-40": {"onset_doy": 92,  "peak_doy": 116, "duration": 24},
-      "40-45": {"onset_doy": 108, "peak_doy": 132, "duration": 22},
-      "45-50": {"onset_doy": 122, "peak_doy": 144, "duration": 20}
+      "25-30": {
+        "onset_doy": 65,
+        "peak_doy": 90,
+        "duration": 28
+      },
+      "30-35": {
+        "onset_doy": 78,
+        "peak_doy": 102,
+        "duration": 26
+      },
+      "35-40": {
+        "onset_doy": 71,
+        "peak_doy": 119,
+        "duration": 62
+      },
+      "40-45": {
+        "onset_doy": 112,
+        "peak_doy": 135,
+        "duration": 41
+      },
+      "45-50": {
+        "onset_doy": 125,
+        "peak_doy": 140,
+        "duration": 24
+      }
     }
   },
-  "56610": {
+  "53034": {
     "name": "Giant ragweed",
     "pollen_type": "weed",
     "lat_bands": {
-      "25-30": {"onset_doy": 192, "peak_doy": 225, "duration": 52},
-      "30-35": {"onset_doy": 202, "peak_doy": 235, "duration": 48},
-      "35-40": {"onset_doy": 212, "peak_doy": 244, "duration": 44},
-      "40-45": {"onset_doy": 222, "peak_doy": 252, "duration": 40},
-      "45-50": {"onset_doy": 230, "peak_doy": 260, "duration": 36}
+      "25-30": {
+        "onset_doy": 157,
+        "peak_doy": 263,
+        "duration": 90
+      },
+      "30-35": {
+        "onset_doy": 240,
+        "peak_doy": 263,
+        "duration": 54
+      },
+      "35-40": {
+        "onset_doy": 223,
+        "peak_doy": 239,
+        "duration": 37
+      },
+      "40-45": {
+        "onset_doy": 214,
+        "peak_doy": 230,
+        "duration": 33
+      },
+      "45-50": {
+        "onset_doy": 207,
+        "peak_doy": 222,
+        "duration": 43
+      }
     }
   },
-  "47602": {
+  "52801": {
     "name": "Perennial ryegrass",
     "pollen_type": "grass",
     "lat_bands": {
-      "25-30": {"onset_doy": 95,  "peak_doy": 125, "duration": 50},
-      "30-35": {"onset_doy": 108, "peak_doy": 138, "duration": 46},
-      "35-40": {"onset_doy": 122, "peak_doy": 152, "duration": 42},
-      "40-45": {"onset_doy": 138, "peak_doy": 165, "duration": 38},
-      "45-50": {"onset_doy": 152, "peak_doy": 178, "duration": 34}
+      "25-30": {
+        "onset_doy": 95,
+        "peak_doy": 125,
+        "duration": 50
+      },
+      "30-35": {
+        "onset_doy": 103,
+        "peak_doy": 118,
+        "duration": 39
+      },
+      "35-40": {
+        "onset_doy": 102,
+        "peak_doy": 157,
+        "duration": 75
+      },
+      "40-45": {
+        "onset_doy": 139,
+        "peak_doy": 169,
+        "duration": 81
+      },
+      "45-50": {
+        "onset_doy": 160,
+        "peak_doy": 175,
+        "duration": 82
+      }
     }
   }
 }
