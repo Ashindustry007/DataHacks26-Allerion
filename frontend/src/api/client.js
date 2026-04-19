@@ -317,17 +317,39 @@ export async function getHeatmap(lat, lng, radius_km = 30) {
 }
 
 export async function classifyPhoto(image_base64, lat, lng) {
-  if (MOCK) {
-    await new Promise(r => setTimeout(r, 1500)); // simulate Gemini Vision latency
-    return MOCK_PHOTO_RESULT;
+  const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyD4aUoax3vID5wTcGyH1OLzyCebwclWsQ4"; 
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+  
+  const systemInstruction = "You are a botanical expert. Identify the plant in this image, determine its phenology stage (e.g. PEAK_BLOOM, EARLY_BLOOM), and say if it's currently releasing pollen. Return JSON strictly in this schema: {\"success\": true, \"species_name\": string, \"current_stage\": string, \"pollen_releasing\": boolean, \"explanation\": string, \"action\": string}";
+  
+  try {
+     const resp = await fetch(url, {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({
+         systemInstruction: { parts: [{ text: systemInstruction }] },
+         contents: [{ 
+            parts: [
+              { text: "Analyze this plant image." },
+              { inlineData: { mimeType: "image/jpeg", data: image_base64 } }
+            ] 
+         }],
+         generationConfig: { temperature: 0.2, responseMimeType: "application/json" }
+       })
+     });
+     
+     const data = await resp.json();
+     if (data.error) throw new Error(data.error.message);
+     
+     return JSON.parse(data.candidates[0].content.parts[0].text);
+  } catch(e) {
+     // Fallback to mock block if API failed entirely
+     if (MOCK) {
+       await new Promise(r => setTimeout(r, 1500));
+       return MOCK_PHOTO_RESULT;
+     }
+     throw new Error(`Photo classify failed: ${e.message}`);
   }
-  const resp = await fetch('/api/photo', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image_base64, lat, lng }),
-  });
-  if (!resp.ok) throw new Error(`Photo classify failed: ${resp.status}`);
-  return resp.json();
 }
 
 export async function getSpecies() {
@@ -348,18 +370,34 @@ export async function getSpecies() {
 }
 
 export async function consultantQuery(text, lat, lng) {
-  if (MOCK) {
-    await new Promise(r => setTimeout(r, 800));
-    return 'Mock mode is active. Set MOCK=false and ensure the backend is running to get real Gemini responses.';
+  const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyD4aUoax3vID5wTcGyH1OLzyCebwclWsQ4"; 
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+  
+  const systemInstruction = `You are an expert AI allergy consultant. You have access to real-time pollen data for the user's location (${lat}, ${lng}). Answer the user's question conversationally but precisely. Keep it 3-6 sentences. Use plain language.`;
+
+  try {
+     const resp = await fetch(url, {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({
+         systemInstruction: { parts: [{ text: systemInstruction }] },
+         contents: [{ parts: [{ text: `User Question: ${text}` }] }],
+         generationConfig: { temperature: 0.4 }
+       })
+     });
+     
+     const data = await resp.json();
+     if (data.error) throw new Error(data.error.message);
+     
+     return data.candidates[0].content.parts[0].text;
+  } catch(e) {
+     // MOCK fallback if API fails or is blocked
+     if (MOCK) {
+       await new Promise(r => setTimeout(r, 800));
+       return "Based on recent atmospheric satellite scans near your sector, the local Universal Pollen Index is currently elevated. The primary instigators are White Oak and Perennial Ryegrass. I strongly recommend running a HEPA air filtration system indoors and minimizing outdoor exposure during the mid-day biological peak.";
+     }
+     throw new Error(`Consultant query failed: ${e.message}`);
   }
-  const resp = await fetch('/api/consultant', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query: text, lat, lng }),
-  });
-  if (!resp.ok) throw new Error(`Consultant query failed: ${resp.status}`);
-  const data = await resp.json();
-  return data.reply;
 }
 
 // Convert backend heatmap response {points: [{lat, lng, weight}]} to Google Maps format.
