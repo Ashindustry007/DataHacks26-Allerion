@@ -1,4 +1,6 @@
 import React from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import PollenBackground from '../components/PollenBackground';
 
 // ── Icons (Raw SVGs to avoid dependency issues) ─────────────────────────────
 const LeafIcon = ({ className }) => (
@@ -33,6 +35,8 @@ const CameraIcon = ({ className }) => (
 // ─────────────────────────────────────────────────────────────────────────────
 
 const Landing = () => {
+  const navigate = useNavigate();
+
   // Deep glassmorphism preset
   const glassPanel = "bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]";
   
@@ -44,6 +48,7 @@ const Landing = () => {
       
       {/* ── Background Atmos ─────────────────────────────────────────────── */}
       <div className="fixed inset-0 z-0 pointer-events-none">
+        <PollenBackground />
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-teal-900/10 blur-[120px]" />
         <div className="absolute top-[40%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-900/10 blur-[150px]" />
         {/* Subtle grid overlay to sell the dashboard feel */}
@@ -62,12 +67,12 @@ const Landing = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-8 text-xs font-semibold tracking-[0.15em] uppercase text-slate-400">
-          <a href="#" className="hover:text-teal-400 transition-colors">Live Map</a>
-          <a href="#" className="hover:text-orange-400 transition-colors">My Profile</a>
-          <a href="#" className="hover:text-yellow-400 transition-colors">Plant Scanner</a>
+          <Link to="/heatmap" className="hover:text-teal-400 transition-colors">Live Map</Link>
+          <Link to="/dashboard" className="hover:text-orange-400 transition-colors">My Profile</Link>
+          <Link to="/upload" className="hover:text-yellow-400 transition-colors">Plant Scanner</Link>
         </div>
 
-        <button className="relative group px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider text-white overflow-hidden">
+        <button onClick={() => navigate('/dashboard')} className="relative group px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider text-white overflow-hidden">
           <div className={`absolute inset-0 ${cyberGradient} opacity-80 group-hover:opacity-100 transition-opacity`} />
           <div className="absolute inset-[1px] bg-slate-900 rounded-[7px] transition-all group-hover:bg-slate-900/80" />
           <span className="relative flex items-center justify-center gap-2">
@@ -101,12 +106,12 @@ const Landing = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <button className={`relative px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_0_30px_rgba(220,38,38,0.3)] hover:shadow-[0_0_50px_rgba(251,146,60,0.5)] transition-shadow overflow-hidden group`}>
+            <button onClick={() => navigate('/heatmap')} className={`relative px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-[0.1em] text-white shadow-[0_0_30px_rgba(220,38,38,0.3)] hover:shadow-[0_0_50px_rgba(251,146,60,0.5)] transition-shadow overflow-hidden group`}>
               <div className={`absolute inset-0 ${cyberGradient} opacity-90 group-hover:opacity-100`} />
               <span className="relative">Explore the Global Heatmap</span>
             </button>
             
-            <button className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-[0.1em] text-slate-300 border border-slate-700 bg-slate-800/30 hover:bg-slate-800 hover:text-white transition-all">
+            <button onClick={() => navigate('/dashboard')} className="px-8 py-4 rounded-xl text-sm font-bold uppercase tracking-[0.1em] text-slate-300 border border-slate-700 bg-slate-800/30 hover:bg-slate-800 hover:text-white transition-all">
               Create Your Profile
             </button>
           </div>
@@ -124,7 +129,7 @@ const Landing = () => {
             <p className="text-sm text-slate-400 leading-relaxed mb-8 flex-grow">
               Explore our WebGL-powered map. See exactly which neighborhoods are experiencing peak blooms for your specific allergy triggers globally.
             </p>
-            <button className="w-full py-3 rounded-lg bg-slate-800/80 border border-slate-700 text-xs font-bold uppercase tracking-widest text-teal-400 hover:bg-teal-500/10 transition-colors mt-auto">
+            <button onClick={() => navigate('/heatmap')} className="w-full py-3 rounded-lg bg-slate-800/80 border border-slate-700 text-xs font-bold uppercase tracking-widest text-teal-400 hover:bg-teal-500/10 transition-colors mt-auto">
               Enter Map
             </button>
           </div>
@@ -138,7 +143,7 @@ const Landing = () => {
             <p className="text-sm text-slate-400 leading-relaxed mb-8 flex-grow">
               Upload your clinical prick test results. Allerion monitors the environment and sends you custom alerts only when your specific triggers are airborne.
             </p>
-            <button className="w-full py-3 rounded-lg bg-slate-800/80 border border-slate-700 text-xs font-bold uppercase tracking-widest text-yellow-400 hover:bg-yellow-500/10 transition-colors mt-auto">
+            <button onClick={() => navigate('/dashboard')} className="w-full py-3 rounded-lg bg-slate-800/80 border border-slate-700 text-xs font-bold uppercase tracking-widest text-yellow-400 hover:bg-yellow-500/10 transition-colors mt-auto">
               Configure Profile
             </button>
           </div>
@@ -152,7 +157,7 @@ const Landing = () => {
             <p className="text-sm text-slate-400 leading-relaxed mb-8 flex-grow">
               Identify threats on the go. Snap a photo of any plant to instantly learn its species, phenology stage, and current pollen-releasing status.
             </p>
-            <button className="w-full py-3 rounded-lg bg-slate-800/80 border border-slate-700 text-xs font-bold uppercase tracking-widest text-orange-400 hover:bg-orange-500/10 transition-colors mt-auto">
+            <button onClick={() => navigate('/upload')} className="w-full py-3 rounded-lg bg-slate-800/80 border border-slate-700 text-xs font-bold uppercase tracking-widest text-orange-400 hover:bg-orange-500/10 transition-colors mt-auto">
               Launch Scanner
             </button>
           </div>
