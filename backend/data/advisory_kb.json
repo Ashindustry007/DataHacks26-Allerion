@@ -1,0 +1,56 @@
+{
+  "general_measures": [
+    "Keep windows closed during peak pollen hours (5–10 AM)",
+    "Shower and change clothes after spending time outdoors",
+    "Check pollen counts before planning outdoor activities",
+    "Wear sunglasses outdoors to protect eyes from pollen",
+    "Use HEPA air filters indoors and replace filters regularly",
+    "Dry clothes indoors rather than on a clothesline during high pollen days",
+    "Monitor local pollen forecasts and plan accordingly"
+  ],
+  "species_tips": {
+    "RAGWEED": [
+      "Ragweed pollen travels up to 400 miles — even rural escapes won't fully help",
+      "Peak shedding is between 10 AM and 3 PM on dry windy days",
+      "Rain temporarily reduces airborne pollen levels"
+    ],
+    "OAK": [
+      "Oak pollen is heavy and visible as yellow dust on cars and surfaces",
+      "Cross-reacts with apple, peach, cherry, and hazelnut allergens",
+      "Morning hours before 10 AM have the highest concentrations"
+    ],
+    "BIRCH": [
+      "Birch pollen cross-reacts with hazelnuts, apples, pears, and carrots",
+      "Oral allergy syndrome common — raw fruits may cause mouth tingling",
+      "Season typically lasts 2–3 weeks in spring"
+    ],
+    "JUNIPER": [
+      "Eastern red cedar (juniper) season peaks in winter and early spring",
+      "Mountain cedar fever can be especially severe in Texas and Oklahoma",
+      "Indoor exposure is low — symptoms worsen when spending time outside"
+    ],
+    "GRAMINALES": [
+      "Grass pollen is a major trigger for asthma — keep rescue inhaler handy",
+      "Mowing the lawn can dramatically increase your exposure",
+      "Low-allergen lawn alternatives include clover or artificial turf"
+    ],
+    "ELM": [
+      "American elm blooms very early — one of the first spring trees",
+      "Pollen season is short (2–3 weeks) but can be intense"
+    ],
+    "OLIVE": [
+      "Olive pollen is highly allergenic and triggers severe reactions in some people",
+      "Avoid planting olive trees near your home if you have pollen allergies"
+    ],
+    "ALDER": [
+      "Red alder is among the earliest spring pollinators",
+      "Cross-reacts with birch, hazel, and hornbeam pollens"
+    ]
+  },
+  "timing_advice": {
+    "low":       "Outdoor conditions are favorable today. Normal activity is fine.",
+    "moderate":  "Consider limiting prolonged outdoor exposure, especially during morning hours.",
+    "high":      "Best outdoor time today is after 4 PM when pollen counts typically drop.",
+    "very_high": "Minimize outdoor activity if possible. If you must go out, wear a mask and shower afterward."
+  }
+}
