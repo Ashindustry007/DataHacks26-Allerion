@@ -20,7 +20,7 @@ def test_lat_band():
 
 
 def test_get_base_phenology_known_species():
-    result = _get_base_phenology(56928, 32.71)  # White oak at San Diego lat
+    result = _get_base_phenology(54779, 32.71)  # White oak at San Diego lat
     assert result is not None
     assert "onset_doy" in result
     assert "peak_doy"  in result

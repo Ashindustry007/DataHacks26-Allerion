@@ -70,14 +70,14 @@ def test_generate_14day_forecast_confidence_tiers():
 
 def test_generate_14day_forecast_with_inat():
     inat_obs = [
-        {"taxon_id": 56928, "observed_on": "2026-04-15", "phenology_stage": "PEAK_BLOOM",
+        {"taxon_id": 54779, "observed_on": "2026-04-15", "phenology_stage": "PEAK_BLOOM",
          "h3_cell": "842a100ffffffff", "observed_at": "2026-04-15T10:00:00"}
     ]
     daily = generate_14day_forecast(32.71, -117.16, inat_obs=inat_obs)
     assert len(daily) == 14
     # iNat obs should appear in sources of white oak forecast for day 0
     oak_forecast = next(
-        (s for s in daily[0]["top_species"] if s["species_id"] == 56928), None
+        (s for s in daily[0]["top_species"] if s["species_id"] == 54779), None
     )
     if oak_forecast:
         assert "inat" in oak_forecast["sources"]
@@ -94,6 +94,6 @@ def test_generate_14day_forecast_with_google():
 
     daily = generate_14day_forecast(32.71, -117.16, google_data=google_data)
     day0 = daily[0]
-    oak = next((s for s in day0["top_species"] if s["species_id"] in (56928, 56891)), None)
+    oak = next((s for s in day0["top_species"] if s["species_id"] in (54779, 49005)), None)
     if oak:
         assert oak["google_upi"] is not None
