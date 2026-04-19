@@ -47,32 +47,30 @@ const BellIcon = ({ className }) => (
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+const STORAGE_KEY = 'allerion_profile';
+
+function loadProfile() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+const DEFAULT_FORM = {
+  fullName: '',
+  email: '',
+  mobile: '',
+  location: '',
+  triggers: { trees: 0, grasses: 0, weeds: 0 },
+  symptoms: { asthma: false, rhinitis: false, eyes: false, hives: false },
+  medications: '',
+  alerts: { push: true, email: false, proximity: true },
+};
+
 const ProfileSetup = () => {
   const navigate = useNavigate();
-
-  const [form, setForm] = useState({
-    fullName: '',
-    email: '',
-    mobile: '',
-    location: '',
-    triggers: {
-      trees: 0,
-      grasses: 0,
-      weeds: 0
-    },
-    symptoms: {
-      asthma: false,
-      rhinitis: false,
-      eyes: false,
-      hives: false
-    },
-    medications: '',
-    alerts: {
-      push: true,
-      email: false,
-      proximity: true
-    }
-  });
+  const [form, setForm] = useState(() => loadProfile() || DEFAULT_FORM);
+  const [saved, setSaved] = useState(false);
 
   const updateTrigger = (key, val) => {
     setForm(prev => ({ ...prev, triggers: { ...prev.triggers, [key]: Number(val) } }));
@@ -134,18 +132,28 @@ const ProfileSetup = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Full Name</label>
-                <input type="text" placeholder="Citizen Identity" className={inputTheme} />
+                <input type="text" placeholder="Citizen Identity" className={inputTheme}
+                  value={form.fullName}
+                  onChange={(e) => setForm({...form, fullName: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Email Address</label>
-                <input type="email" placeholder="secure.comms@network.com" className={inputTheme} />
+                <input type="email" placeholder="secure.comms@network.com" className={inputTheme}
+                  value={form.email}
+                  onChange={(e) => setForm({...form, email: e.target.value})}
+                />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <label className="text-xs font-bold text-teal-400 uppercase tracking-widest flex items-center justify-between">
                   <span>Primary Location (Pincode / Address)</span>
                   <span className="text-[9px] text-slate-500 font-mono tracking-normal">*Required to calibrate your local H3 hex grid</span>
                 </label>
-                <input type="text" placeholder="Sector 4 / Area Code" className={`${inputTheme} border-teal-900/50 focus:ring-teal-400/50 bg-teal-950/20`} />
+                <input type="text" placeholder="Sector 4 / Area Code"
+                  className={`${inputTheme} border-teal-900/50 focus:ring-teal-400/50 bg-teal-950/20`}
+                  value={form.location}
+                  onChange={(e) => setForm({...form, location: e.target.value})}
+                />
               </div>
             </div>
           </section>
@@ -275,14 +283,18 @@ const ProfileSetup = () => {
           {/* ── Footer Action ─────────────────────────────────────────────── */}
           <div className="pt-8">
             <button 
-              onClick={() => navigate('/heatmap')}
+              onClick={() => {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
+                setSaved(true);
+                setTimeout(() => navigate('/forecast'), 600);
+              }}
               className={`w-full relative px-8 py-5 rounded-2xl text-lg font-black uppercase tracking-[0.15em] text-white shadow-[0_0_40px_rgba(74,222,128,0.3)] hover:shadow-[0_0_60px_rgba(250,204,21,0.5)] transition-all overflow-hidden group border border-teal-400/50 hover:border-yellow-400/50`}
             >
               <div className={`absolute inset-0 ${cyberGradient} opacity-80 group-hover:opacity-100 transition-opacity`} />
               <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
               <span className="relative flex items-center justify-center gap-3">
                 <DnaIcon className="w-5 h-5 animate-pulse" />
-                Initialize Radar & Save Profile
+                {saved ? 'Profile Saved ✓' : 'Initialize Radar & Save Profile'}
               </span>
             </button>
           </div>

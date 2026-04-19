@@ -85,7 +85,7 @@ const Heatmap = () => {
     setError(null);
     Promise.all([
       getForecast(center.lat, center.lng),
-      getHeatmap(center.lat, center.lng, 2),
+      getHeatmap(center.lat, center.lng, 1),
     ])
       .then(([fc, hm]) => {
         setForecast(fc);
@@ -101,15 +101,15 @@ const Heatmap = () => {
   }, [center, isLoaded]);
 
   const heatmapOptions = useMemo(() => ({
-    radius: 25,
-    opacity: 0.75,
+    radius: 60,
+    opacity: 0.7,
     dissipating: true,
     gradient: [
       'rgba(0, 0, 0, 0)',
-      '#4ade80',
-      '#facc15',
-      '#fb923c',
-      '#dc2626',
+      'rgba(74, 222, 128, 0.4)',
+      'rgba(250, 204, 21, 0.6)',
+      'rgba(251, 146, 60, 0.8)',
+      'rgba(220, 38, 38, 0.9)',
     ],
   }), []);
 
@@ -151,7 +151,7 @@ const Heatmap = () => {
       <GoogleMap
         mapContainerStyle={{ width: '100vw', height: '100vh' }}
         center={center}
-        zoom={13}
+        zoom={15}
         options={{
           disableDefaultUI: true,
           styles: darkMapStyles,

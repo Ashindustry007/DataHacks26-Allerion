@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { classifyPhoto, fileToBase64, consultantQuery } from '../api/client';
 
 // ── Icons (Raw SVGs) ────────────────────────────────────────────────────────
 const LeafIcon = ({ className }) => (
@@ -43,60 +43,87 @@ const UserIcon = ({ className }) => (
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+const SD_DEFAULT = [32.71, -117.16];
+
 const Consultant = () => {
-  const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [userPos, setUserPos] = useState(SD_DEFAULT);
   const [messages, setMessages] = useState([
     {
       id: 1,
       sender: 'ai',
-      text: "Welcome to your personal AI Allergy Consultant. Upload a plant photo for instant species and pollen threat analysis, or ask me to draft safe travel advisories based on your clinical profile."
+      text: "Welcome to your personal AI Allergy Consultant. Upload a plant photo for instant species and pollen threat analysis, or ask me about current pollen conditions in your area."
     }
   ]);
 
-  // Deep glassmorphism preset
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => setUserPos([pos.coords.latitude, pos.coords.longitude]),
+        () => {},
+      );
+    }
+  }, []);
+
   const glassPanel = "bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]";
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || sending) return;
 
-    // Add user message
     const userMsg = { id: Date.now(), sender: 'user', text: input };
     setMessages(prev => [...prev, userMsg]);
+    const query = input;
     setInput('');
+    setSending(true);
 
-    // Mock AI Reply
-    setTimeout(() => {
-      let replyText = "Running correlation scans against your Profile... I'm identifying high grass-pollen traces in that region. Ensure you carry your antihistamines and use your mask if traveling outdoors between 10 AM and 4 PM.";
-      
-      if (input.toLowerCase().includes("plant") || input.toLowerCase().includes("identify")) {
-        replyText = "Image analysis complete. This appears to be Common Ragweed (Ambrosia artemisiifolia). Warning: This is a severe trigger for your configured Rhinitis profile. Blooming phase has started locally.";
-      }
-
-      const aiMsg = { id: Date.now() + 1, sender: 'ai', text: replyText };
-      setMessages(prev => [...prev, aiMsg]);
-    }, 1200);
+    try {
+      const reply = await consultantQuery(query, userPos[0], userPos[1]);
+      setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'ai', text: reply }]);
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        sender: 'ai',
+        text: `Could not fetch pollen data: ${err.message}. Please check that the backend is running.`,
+      }]);
+    } finally {
+      setSending(false);
+    }
   };
 
-  const handleImageUpload = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const imageUrl = URL.createObjectURL(file);
-      
-      const userMsg = { id: Date.now(), sender: 'user', imageUrl };
-      setMessages(prev => [...prev, userMsg]);
-      
-      setTimeout(() => {
-        const aiMsg = { 
-          id: Date.now() + 1, 
-          sender: 'ai', 
-          text: "Image received and processed. This is a mature Oak tree. It is currently in heavy pollination phase. Based on your personalized defense configuration, this represents a **SEVERE** threat in your sector. Limit outdoor exposure." 
-        };
-        setMessages(prev => [...prev, aiMsg]);
-      }, 1500);
+  const handleImageUpload = async (e) => {
+    if (!e.target.files?.[0]) return;
+    const file = e.target.files[0];
+    const imageUrl = URL.createObjectURL(file);
+
+    setMessages(prev => [...prev, { id: Date.now(), sender: 'user', imageUrl }]);
+    setSending(true);
+
+    try {
+      const base64 = await fileToBase64(file);
+      const result = await classifyPhoto(base64, userPos[0], userPos[1]);
+      const lines = [
+        `**${result.species_name}** — ${Math.round(result.confidence * 100)}% confidence`,
+        result.is_allergen ? '⚠ This is a known allergen.' : '✓ Not a tracked allergen.',
+        `Stage: ${result.phenology_stage}${result.pollen_releasing ? ' — actively releasing pollen.' : '.'}`,
+        '',
+        result.explanation,
+        '',
+        `**Action:** ${result.action}`,
+      ];
+      setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'ai', text: lines.join('\n') }]);
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        sender: 'ai',
+        text: `Image analysis failed: ${err.message}. Try a clearer photo of the plant.`,
+      }]);
+    } finally {
+      setSending(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -185,9 +212,13 @@ const Consultant = () => {
 
             <button 
               onClick={handleSend}
-              className="p-3 rounded-xl bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white transition-all shadow-[0_0_15px_rgba(251,146,60,0.2)] hover:shadow-[0_0_25px_rgba(251,146,60,0.5)] border border-orange-500/30"
+              disabled={sending}
+              className="p-3 rounded-xl bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white transition-all shadow-[0_0_15px_rgba(251,146,60,0.2)] hover:shadow-[0_0_25px_rgba(251,146,60,0.5)] border border-orange-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <SendIcon className="w-5 h-5" />
+              {sending
+                ? <div className="w-5 h-5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                : <SendIcon className="w-5 h-5" />
+              }
             </button>
           </div>
           <p className="text-center text-[10px] text-slate-600 mt-3 font-mono">

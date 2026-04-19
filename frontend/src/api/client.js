@@ -347,6 +347,21 @@ export async function getSpecies() {
   return resp.json();
 }
 
+export async function consultantQuery(text, lat, lng) {
+  if (MOCK) {
+    await new Promise(r => setTimeout(r, 800));
+    return 'Mock mode is active. Set MOCK=false and ensure the backend is running to get real Gemini responses.';
+  }
+  const resp = await fetch('/api/consultant', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: text, lat, lng }),
+  });
+  if (!resp.ok) throw new Error(`Consultant query failed: ${resp.status}`);
+  const data = await resp.json();
+  return data.reply;
+}
+
 // Convert backend heatmap response {points: [{lat, lng, weight}]} to Google Maps format.
 export function toGoogleHeatmapData(heatmapResponse) {
   const pts = heatmapResponse?.points;

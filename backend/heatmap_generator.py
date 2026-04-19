@@ -12,9 +12,8 @@ _DATA_DIR = Path(__file__).parent / "data"
 _HEATMAP_RESOLUTION = 9  # ~175m hexagons — dense local points
 
 
-def generate_heatmap(center_lat: float, center_lng: float, radius_km: float = 2) -> dict:
+def generate_heatmap(center_lat: float, center_lng: float, radius_km: float = 1) -> dict:
     """Return a flat list of {lat, lng, weight} points within radius_km of center."""
-    # ~175m per hex edge at res 9, ~260m center-to-center
     rings = max(1, int(radius_km / 0.26))
     center_cell = h3.latlng_to_cell(center_lat, center_lng, _HEATMAP_RESOLUTION)
     cells = h3.grid_disk(center_cell, rings)
@@ -31,8 +30,9 @@ def generate_heatmap(center_lat: float, center_lng: float, radius_km: float = 2)
         dist_km = math.sqrt(dlat * dlat + dlng * dlng)
         if dist_km > radius_km:
             continue
-        # Slight falloff from center so the blob looks natural
-        falloff = max(0.3, 1.0 - (dist_km / radius_km) * 0.5)
+        # Gaussian-ish falloff for a circular blob
+        norm_dist = dist_km / radius_km
+        falloff = math.exp(-2.0 * norm_dist * norm_dist)
         weight = round(base_ci * falloff / 5.0, 4)
         points.append({
             "lat": round(lat, 6),

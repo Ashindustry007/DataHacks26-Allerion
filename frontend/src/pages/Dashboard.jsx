@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker } from 'react-leaflet';
-import L from 'leaflet';
+import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
 import { X, ArrowUp } from 'lucide-react';
 import { getForecast, getHeatmap } from '../api/client';
 
@@ -34,42 +33,6 @@ function speciesBarColor(pollen_prob) {
   if (pollen_prob >= 0.25) return '#facc15';
   return '#4ade80';
 }
-
-function makeCityPin({ title, subtext, accent, glow }) {
-  return L.divIcon({
-    className: 'city-pin-wrapper',
-    html: `
-      <div style="
-        min-width:180px;max-width:220px;padding:10px 12px;
-        background:${glow};
-        backdrop-filter:blur(14px);
-        -webkit-backdrop-filter:blur(14px);
-        border:1px solid ${accent}55;
-        border-radius:12px;
-        box-shadow:0 0 20px ${accent}44, inset 0 1px 0 rgba(255,255,255,0.06);
-        color:#e2e8f0;font-family:Inter,system-ui,sans-serif;
-      ">
-        <div style="font-weight:700;font-size:13px;color:#f8fafc;text-shadow:0 0 12px ${accent}88;margin-bottom:4px">${title}</div>
-        <div style="font-size:11px;line-height:1.35;color:#94a3b8">${subtext}</div>
-      </div>`,
-    iconSize: [220, 72],
-    iconAnchor: [110, 36],
-  });
-}
-
-const downtownPin = makeCityPin({
-  title: 'San Diego (Downtown)',
-  subtext: 'Composite Index: 2.1/5',
-  accent: '#4ade80',
-  glow: 'rgba(15,23,42,0.78)',
-});
-
-const elCajonPin = makeCityPin({
-  title: 'El Cajon',
-  subtext: 'Composite Index: 4.8/5. Top: White Oak',
-  accent: '#dc2626',
-  glow: 'rgba(15,23,42,0.78)',
-});
 
 // ---------------------------------------------------------------------------
 // Species forecast rows (SpeciesForecast contract)
@@ -238,25 +201,36 @@ function ProfileDrawer({ onClose }) {
 
 export default function Dashboard() {
   const [forecast, setForecast] = useState(null);
-  const [geojson, setGeojson] = useState(null);
+  const [heatmapPoints, setHeatmapPoints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [userCenter, setUserCenter] = useState(SD_CENTER);
 
   useEffect(() => {
-    const lat = SD_CENTER[0];
-    const lng = SD_CENTER[1];
-    Promise.all([getForecast(lat, lng), getHeatmap(lat, lng, 30)])
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => setUserCenter([pos.coords.latitude, pos.coords.longitude]),
+        () => {},
+        { enableHighAccuracy: true, timeout: 5000 },
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    const [lat, lng] = userCenter;
+    setLoading(true);
+    Promise.all([getForecast(lat, lng), getHeatmap(lat, lng, 2)])
       .then(([fc, hm]) => {
         setForecast(fc);
-        setGeojson(hm);
+        setHeatmapPoints(hm?.points || []);
         setLoading(false);
       })
       .catch(err => {
         setError(err.message || 'Failed to load');
         setLoading(false);
       });
-  }, []);
+  }, [userCenter]);
 
   const daily = forecast?.daily || [];
   const today = daily[0];
@@ -274,24 +248,6 @@ export default function Dashboard() {
     return [...list].sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
   }, [today]);
 
-  const geoJsonStyle = feature => ({
-    fillColor: colorFromCompositeIndex(feature.properties.composite_index),
-    fillOpacity: 0.52,
-    color: 'rgba(15,23,42,0.85)',
-    weight: 0.6,
-  });
-
-  const onEachHex = (feature, layer) => {
-    const p = feature.properties;
-    layer.bindPopup(`
-      <div style="font-family:Inter,sans-serif;min-width:140px;color:#0f172a">
-        <strong style="font-size:13px">composite_index: ${p.composite_index}</strong><br/>
-        <span style="text-transform:capitalize;font-size:11px;color:#475569">severity: ${String(p.severity).replace('_', ' ')}</span><br/>
-        <span style="font-size:11px;color:#64748b">Top: ${p.top_species_name}</span>
-      </div>
-    `);
-  };
-
   if (error && !forecast) {
     return (
       <main className="min-h-screen bg-[#0f172a] flex items-center justify-center text-slate-300 px-6 pb-24 font-sans">
@@ -305,16 +261,27 @@ export default function Dashboard() {
       {/* Full-bleed map */}
       <div className="absolute inset-0 z-0">
         {!loading && (
-          <MapContainer center={SD_CENTER} zoom={10} className="h-full w-full" zoomControl={false} attributionControl={false}>
+          <MapContainer center={userCenter} zoom={13} className="h-full w-full" zoomControl={false} attributionControl={false}>
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
               attribution=""
             />
-            {geojson && (
-              <GeoJSON data={geojson} style={geoJsonStyle} onEachFeature={onEachHex} />
-            )}
-            <Marker position={[32.715, -117.162]} icon={downtownPin} />
-            <Marker position={[32.7947, -116.962]} icon={elCajonPin} />
+            {heatmapPoints.map((pt, i) => {
+              const ci = pt.weight * 5;
+              return (
+                <CircleMarker
+                  key={i}
+                  center={[pt.lat, pt.lng]}
+                  radius={6}
+                  pathOptions={{
+                    fillColor: colorFromCompositeIndex(ci),
+                    fillOpacity: 0.55,
+                    color: 'rgba(15,23,42,0.6)',
+                    weight: 0.5,
+                  }}
+                />
+              );
+            })}
           </MapContainer>
         )}
         {loading && (
