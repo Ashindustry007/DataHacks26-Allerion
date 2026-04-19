@@ -1,6 +1,6 @@
 output "service_url" {
   description = "Cloud Run service URL"
-  value       = google_cloud_run_v2_service.pollencast.uri
+  value       = google_cloud_run_v2_service.allerion.uri
 }
 
 output "image_url" {
@@ -10,5 +10,5 @@ output "image_url" {
 
 output "service_account" {
   description = "Cloud Run service account email"
-  value       = google_service_account.pollencast.email
+  value       = google_service_account.allerion.email
 }

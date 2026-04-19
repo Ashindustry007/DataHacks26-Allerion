@@ -13,62 +13,42 @@ provider "google" {
   region  = var.region
 }
 
-# --------------------------------------------------------------------------
-# Enable required GCP APIs
-# --------------------------------------------------------------------------
-
-locals {
-  apis = [
-    "run.googleapis.com",
-    "artifactregistry.googleapis.com",
-    "firestore.googleapis.com",
-    "cloudscheduler.googleapis.com",
-    "cloudbuild.googleapis.com",
-    "fcm.googleapis.com",
-  ]
-}
-
-resource "google_project_service" "apis" {
-  for_each           = toset(local.apis)
-  service            = each.value
-  disable_on_destroy = false
-}
+# APIs are pre-enabled via gcloud by the project owner.
+# Terraform reads their state but will not attempt to enable/disable them.
 
 # --------------------------------------------------------------------------
 # Artifact Registry — Docker repo for the container image
 # --------------------------------------------------------------------------
 
-resource "google_artifact_registry_repository" "pollencast" {
+resource "google_artifact_registry_repository" "allerion" {
   location      = var.region
-  repository_id = "pollencast"
+  repository_id = "allerion"
   format        = "DOCKER"
-
-  depends_on = [google_project_service.apis["artifactregistry.googleapis.com"]]
 }
 
 locals {
-  image_url = "${var.region}-docker.pkg.dev/${var.project_id}/pollencast/backend:${var.image_tag}"
+  image_url = "${var.region}-docker.pkg.dev/${var.project_id}/allerion/backend:${var.image_tag}"
 }
 
 # --------------------------------------------------------------------------
 # Service account for Cloud Run
 # --------------------------------------------------------------------------
 
-resource "google_service_account" "pollencast" {
-  account_id   = "pollencast-run"
-  display_name = "PollenCast Cloud Run"
+resource "google_service_account" "allerion" {
+  account_id   = "allerion-run"
+  display_name = "Allerion Cloud Run"
 }
 
 resource "google_project_iam_member" "firestore" {
   project = var.project_id
   role    = "roles/datastore.user"
-  member  = "serviceAccount:${google_service_account.pollencast.email}"
+  member  = "serviceAccount:${google_service_account.allerion.email}"
 }
 
 resource "google_project_iam_member" "fcm" {
   project = var.project_id
   role    = "roles/firebasecloudmessaging.admin"
-  member  = "serviceAccount:${google_service_account.pollencast.email}"
+  member  = "serviceAccount:${google_service_account.allerion.email}"
 }
 
 # --------------------------------------------------------------------------
@@ -80,24 +60,43 @@ resource "google_firestore_database" "default" {
   location_id = var.region
   type        = "FIRESTORE_NATIVE"
 
-  depends_on = [google_project_service.apis["firestore.googleapis.com"]]
-
   lifecycle {
     ignore_changes = [location_id, type]
   }
 }
 
 # --------------------------------------------------------------------------
+# Firestore composite index: observations(h3_cell ASC, observed_at ASC)
+# --------------------------------------------------------------------------
+
+resource "google_firestore_index" "obs_h3_time" {
+  project    = var.project_id
+  database   = "(default)"
+  collection = "observations"
+
+  fields {
+    field_path = "h3_cell"
+    order      = "ASCENDING"
+  }
+  fields {
+    field_path = "observed_at"
+    order      = "ASCENDING"
+  }
+
+  depends_on = [google_firestore_database.default]
+}
+
+# --------------------------------------------------------------------------
 # Cloud Run service
 # --------------------------------------------------------------------------
 
-resource "google_cloud_run_v2_service" "pollencast" {
-  name     = "pollencast"
+resource "google_cloud_run_v2_service" "allerion" {
+  name     = "allerion"
   location = var.region
   ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {
-    service_account = google_service_account.pollencast.email
+    service_account = google_service_account.allerion.email
 
     containers {
       image = local.image_url
@@ -156,17 +155,14 @@ resource "google_cloud_run_v2_service" "pollencast" {
     timeout = "120s"
   }
 
-  depends_on = [
-    google_project_service.apis["run.googleapis.com"],
-    google_artifact_registry_repository.pollencast,
-  ]
+  depends_on = [google_artifact_registry_repository.allerion]
 }
 
 # Allow unauthenticated access (public API)
 resource "google_cloud_run_v2_service_iam_member" "public" {
   project  = var.project_id
   location = var.region
-  name     = google_cloud_run_v2_service.pollencast.name
+  name     = google_cloud_run_v2_service.allerion.name
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
@@ -176,26 +172,26 @@ resource "google_cloud_run_v2_service_iam_member" "public" {
 # --------------------------------------------------------------------------
 
 resource "google_service_account" "scheduler" {
-  account_id   = "pollencast-scheduler"
-  display_name = "PollenCast Scheduler"
+  account_id   = "allerion-scheduler"
+  display_name = "Allerion Scheduler"
 }
 
 resource "google_cloud_run_v2_service_iam_member" "scheduler_invoke" {
   project  = var.project_id
   location = var.region
-  name     = google_cloud_run_v2_service.pollencast.name
+  name     = google_cloud_run_v2_service.allerion.name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${google_service_account.scheduler.email}"
 }
 
 resource "google_cloud_scheduler_job" "ingest" {
-  name      = "pollencast-ingest"
+  name      = "allerion-ingest"
   schedule  = var.ingest_schedule
   time_zone = "UTC"
 
   http_target {
     http_method = "POST"
-    uri         = "${google_cloud_run_v2_service.pollencast.uri}/api/ingest/delta"
+    uri         = "${google_cloud_run_v2_service.allerion.uri}/api/ingest/delta"
     body        = base64encode(var.ingest_regions_json)
     headers = {
       "Content-Type" = "application/json"
@@ -204,18 +200,16 @@ resource "google_cloud_scheduler_job" "ingest" {
       service_account_email = google_service_account.scheduler.email
     }
   }
-
-  depends_on = [google_project_service.apis["cloudscheduler.googleapis.com"]]
 }
 
 resource "google_cloud_scheduler_job" "alerts" {
-  name      = "pollencast-alerts"
+  name      = "allerion-alerts"
   schedule  = var.alert_schedule
   time_zone = "UTC"
 
   http_target {
     http_method = "POST"
-    uri         = "${google_cloud_run_v2_service.pollencast.uri}/api/alerts/check"
+    uri         = "${google_cloud_run_v2_service.allerion.uri}/api/alerts/check"
     headers = {
       "Content-Type" = "application/json"
     }
@@ -223,6 +217,4 @@ resource "google_cloud_scheduler_job" "alerts" {
       service_account_email = google_service_account.scheduler.email
     }
   }
-
-  depends_on = [google_project_service.apis["cloudscheduler.googleapis.com"]]
 }
