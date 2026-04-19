@@ -15,7 +15,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/dashboard" element={<ProfileSetup />} />
-        <Route path="/forecast" element={<Dashboard />} />
+        <Route path="/path-planner" element={<Dashboard />} />
         <Route path="/heatmap" element={<Heatmap />} />
         <Route path="/consultant" element={<Consultant />} />
         <Route path="/photo" element={<PhotoUpload />} />

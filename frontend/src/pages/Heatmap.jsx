@@ -98,6 +98,22 @@ const Heatmap = () => {
   // Holds GeoJSON until Maps SDK is ready to convert it
   const geojsonRef = useRef(null);
 
+  const [zipCode, setZipCode] = useState('');
+
+  const handleZipSearch = () => {
+    if (!zipCode || zipCode.trim().length === 0) return;
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ address: zipCode }, (results, status) => {
+      if (status === 'OK' && results[0]) {
+        const loc = results[0].geometry.location;
+        setCenter({ lat: loc.lat(), lng: loc.lng() });
+        setZipCode('');
+      } else {
+        setError('Location not found.');
+      }
+    });
+  };
+
   // Resolve user location once
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -197,6 +213,28 @@ const Heatmap = () => {
         {error && (
           <div className="py-4 text-xs text-red-400">{error}</div>
         )}
+
+        {/* ZipCode Input */}
+        <div className="shrink-0 pb-6 border-b border-slate-700/50 mb-6 flex flex-col gap-2 relative">
+            <p className="text-[10px] font-bold text-indigo-400/90 uppercase tracking-[0.2em]">
+              ▸ Sector Scan
+            </p>
+            <div className="flex gap-2">
+               <input 
+                 value={zipCode} 
+                 onChange={(e)=>setZipCode(e.target.value)} 
+                 onKeyDown={(e) => { if (e.key === 'Enter') handleZipSearch(); }}
+                 placeholder="Enter Zip Code or City"
+                 className="flex-1 min-w-0 bg-slate-900 border border-slate-700/50 rounded-lg px-3 py-2 text-xs text-slate-200 outline-none focus:border-indigo-500/50 focus:bg-slate-800 transition-colors"
+               />
+               <button 
+                 onClick={handleZipSearch}
+                 className="shrink-0 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-indigo-500/40 transition-colors"
+               >
+                 Scan
+               </button>
+            </div>
+        </div>
 
         {/* Current Pollen Index */}
         {!loading && today && (
