@@ -15,10 +15,11 @@ GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID")
 # Optional: iNaturalist OAuth application id (better rate limits / attribution)
 INAT_APP_ID = os.getenv("INAT_APP_ID")
 
-# H3 resolution 15 = ~0.5m edge hexagons (~1m accuracy)
-H3_RESOLUTION = 15
+# H3 resolution 4 = ~22km hexagons (metro-level granularity)
+H3_RESOLUTION = 4
 
 ALLERGEN_SPECIES = [
+<<<<<<< HEAD
     {"taxon_id": 53587, "name": "Common ragweed",      "pollen_type": "weed",  "allergenicity": 5, "google_code": "RAGWEED"},
     {"taxon_id": 54779, "name": "White oak",            "pollen_type": "tree",  "allergenicity": 4, "google_code": "OAK"},
     {"taxon_id": 49883, "name": "Paper birch",          "pollen_type": "tree",  "allergenicity": 4, "google_code": "BIRCH"},
@@ -34,10 +35,28 @@ ALLERGEN_SPECIES = [
     {"taxon_id": 49005, "name": "Northern red oak",     "pollen_type": "tree",  "allergenicity": 4, "google_code": "OAK"},
     {"taxon_id": 53034, "name": "Giant ragweed",        "pollen_type": "weed",  "allergenicity": 5, "google_code": "RAGWEED"},
     {"taxon_id": 52801, "name": "Perennial ryegrass",   "pollen_type": "grass", "allergenicity": 4, "google_code": "GRAMINALES"},
+=======
+    {"taxon_id": 48678, "name": "Common ragweed",      "pollen_type": "weed",  "allergenicity": 5, "google_code": "RAGWEED"},
+    {"taxon_id": 56928, "name": "White oak",            "pollen_type": "tree",  "allergenicity": 4, "google_code": "OAK"},
+    {"taxon_id": 48734, "name": "Paper birch",          "pollen_type": "tree",  "allergenicity": 4, "google_code": "BIRCH"},
+    {"taxon_id": 49085, "name": "Eastern red cedar",    "pollen_type": "tree",  "allergenicity": 3, "google_code": "JUNIPER"},
+    {"taxon_id": 64727, "name": "Timothy grass",        "pollen_type": "grass", "allergenicity": 4, "google_code": "GRAMINALES"},
+    {"taxon_id": 49095, "name": "White ash",            "pollen_type": "tree",  "allergenicity": 3, "google_code": "ASH"},
+    {"taxon_id": 54772, "name": "American elm",         "pollen_type": "tree",  "allergenicity": 3, "google_code": "ELM"},
+    {"taxon_id": 53548, "name": "Eastern cottonwood",   "pollen_type": "tree",  "allergenicity": 2, "google_code": "COTTONWOOD"},
+    {"taxon_id": 52823, "name": "Olive",                "pollen_type": "tree",  "allergenicity": 4, "google_code": "OLIVE"},
+    {"taxon_id": 52856, "name": "Common mugwort",       "pollen_type": "weed",  "allergenicity": 3, "google_code": "MUGWORT"},
+    {"taxon_id": 48513, "name": "Red alder",            "pollen_type": "tree",  "allergenicity": 3, "google_code": "ALDER"},
+    {"taxon_id": 64698, "name": "Kentucky bluegrass",   "pollen_type": "grass", "allergenicity": 4, "google_code": "GRAMINALES"},
+    {"taxon_id": 56891, "name": "Northern red oak",     "pollen_type": "tree",  "allergenicity": 4, "google_code": "OAK"},
+    {"taxon_id": 56610, "name": "Giant ragweed",        "pollen_type": "weed",  "allergenicity": 5, "google_code": "RAGWEED"},
+    {"taxon_id": 47602, "name": "Perennial ryegrass",   "pollen_type": "grass", "allergenicity": 4, "google_code": "GRAMINALES"},
+>>>>>>> c9c198689ffcf2f9f33b75ba430a69613378f36d
 ]
 
 # Map Google plant codes to taxon IDs for fusion
 GOOGLE_TO_INAT_MAP: dict[str, list[int]] = {
+<<<<<<< HEAD
     "OAK":        [54779, 49005],
     "BIRCH":      [49883],
     "JUNIPER":    [49399],
@@ -49,4 +68,17 @@ GOOGLE_TO_INAT_MAP: dict[str, list[int]] = {
     "RAGWEED":    [53587, 53034],
     "MUGWORT":    [52856],
     "GRAMINALES": [57190, 60307, 52801],
+=======
+    "OAK":        [56928, 56891],
+    "BIRCH":      [48734],
+    "JUNIPER":    [49085],
+    "ASH":        [49095],
+    "ELM":        [54772],
+    "COTTONWOOD": [53548],
+    "OLIVE":      [52823],
+    "ALDER":      [48513],
+    "RAGWEED":    [48678, 56610],
+    "MUGWORT":    [52856],
+    "GRAMINALES": [64727, 64698, 47602],
+>>>>>>> c9c198689ffcf2f9f33b75ba430a69613378f36d
 }

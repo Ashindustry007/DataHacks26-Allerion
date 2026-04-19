@@ -55,36 +55,3 @@ class HeatmapCell(BaseModel):
     severity: str
     top_species_name: str
     top_species_prob: float
-
-
-class UserProfileCreate(BaseModel):
-    user_id: str
-    trigger_species: list[int]    # taxon_ids the user is allergic to
-    severity_threshold: str       # "low" | "moderate" | "high" | "very_high"
-    lat: float
-    lng: float
-    fcm_token: str                # FCM device token; empty string disables push
-
-
-class UserProfile(BaseModel):
-    user_id: str
-    trigger_species: list[int]
-    severity_threshold: str
-    lat: float
-    lng: float
-    fcm_token: str
-    created_at: str
-    updated_at: str
-
-
-class AlertResult(BaseModel):
-    user_id: str
-    species_name: str
-    severity: str
-    notification_sent: bool
-
-
-class AlertCheckResponse(BaseModel):
-    alerts_evaluated: int
-    alerts_sent: int
-    details: list[AlertResult]

@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from config import ALLERGEN_SPECIES, H3_RESOLUTION
-from alert_sender import send_fcm_notification
 from firestore_client import (
     get_cached_forecast,
     get_recent_observations,
@@ -16,17 +15,9 @@ from firestore_client import (
 from gemini_agents import generate_forecast_and_advisory, generate_species_explanation
 from heatmap_generator import generate_heatmap, load_heatmap, save_heatmap
 from inat_client import _bbox_from_cells, fetch_inat_delta
-from models import (
-    AlertCheckResponse,
-    AlertResult,
-    ForecastResponse,
-    PhotoClassifyResponse,
-    UserProfile,
-    UserProfileCreate,
-)
-from phenology_engine import _index_to_severity, generate_14day_forecast
+from models import ForecastResponse, PhotoClassifyResponse
+from phenology_engine import generate_14day_forecast
 from photo_classifier import classify_photo
-from profile_store import delete_profile, get_all_profiles, get_profile, save_profile
 
 app = FastAPI(title="PollenCast API", version="1.0.0")
 
@@ -212,9 +203,8 @@ async def classify_plant_photo(body: PhotoRequest):
 
 @app.get("/api/heatmap")
 async def get_heatmap(lat: float, lng: float, radius_km: float = 30):
-    # radius_km → approximate H3 ring count at resolution 15 (~1m per ring)
-    # Cap at 50 rings to keep response size manageable at this fine resolution
-    radius_rings = min(50, max(1, int(radius_km * 1000)))
+    # radius_km → approximate H3 ring count at resolution 4 (~22km per ring)
+    radius_rings = max(1, int(radius_km / 22))
 
     # Try pre-computed file first (fast path for demo)
     cached_geojson = load_heatmap("heatmap_cache.json")
@@ -273,90 +263,3 @@ async def ingest_delta(body: IngestRequest):
         total += len(observations)
 
     return {"status": "ok", "observations_ingested": total}
-
-
-# ---------------------------------------------------------------------------
-# POST /api/profile  —  create or update a user allergen profile
-# GET  /api/profile/{user_id}
-# DELETE /api/profile/{user_id}
-# ---------------------------------------------------------------------------
-
-_SEVERITY_ORDER: dict[str, int] = {"low": 0, "moderate": 1, "high": 2, "very_high": 3}
-
-
-@app.post("/api/profile", response_model=UserProfile)
-async def create_or_update_profile(body: UserProfileCreate):
-    existing = get_profile(body.user_id)
-    created_at = existing["created_at"] if existing else datetime.utcnow().isoformat()
-    profile = {
-        **body.model_dump(),
-        "created_at": created_at,
-        "updated_at": datetime.utcnow().isoformat(),
-    }
-    save_profile(profile)
-    return profile
-
-
-@app.get("/api/profile/{user_id}", response_model=UserProfile)
-async def get_user_profile(user_id: str):
-    profile = get_profile(user_id)
-    if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found")
-    return profile
-
-
-@app.delete("/api/profile/{user_id}")
-async def delete_user_profile(user_id: str):
-    if not delete_profile(user_id):
-        raise HTTPException(status_code=404, detail="Profile not found")
-    return {"status": "deleted"}
-
-
-# ---------------------------------------------------------------------------
-# POST /api/alerts/check  —  evaluate all profiles and send push notifications
-# Intended to be called by Cloud Scheduler (same pattern as /api/ingest/delta)
-# ---------------------------------------------------------------------------
-
-@app.post("/api/alerts/check", response_model=AlertCheckResponse)
-async def check_alerts():
-    profiles = get_all_profiles()
-    details: list[AlertResult] = []
-
-    for profile in profiles:
-        forecast = await build_forecast_response(
-            profile["lat"], profile["lng"],
-            use_cache=True, with_gemini=False, persist=False,
-        )
-        today = forecast["daily"][0]
-        trigger_set = set(profile["trigger_species"])
-        threshold_val = _SEVERITY_ORDER.get(profile["severity_threshold"], 1)
-
-        triggered = [
-            sp for sp in today["top_species"]
-            if sp["species_id"] in trigger_set
-            and _SEVERITY_ORDER.get(_index_to_severity(sp["pollen_index"]), 0) >= threshold_val
-        ]
-        if not triggered:
-            continue
-
-        top = triggered[0]
-        stage_label = top["current_stage"].replace("_", " ").lower()
-        title = f"Pollen Alert: {top['name']}"
-        body_text = (
-            f"{top['name']} is {stage_label} — "
-            f"{today['severity'].replace('_', ' ')} risk at your location."
-        )
-
-        sent = await send_fcm_notification(profile["fcm_token"], title, body_text)
-        details.append(AlertResult(
-            user_id=profile["user_id"],
-            species_name=top["name"],
-            severity=today["severity"],
-            notification_sent=sent,
-        ))
-
-    return AlertCheckResponse(
-        alerts_evaluated=len(profiles),
-        alerts_sent=sum(1 for d in details if d.notification_sent),
-        details=details,
-    )

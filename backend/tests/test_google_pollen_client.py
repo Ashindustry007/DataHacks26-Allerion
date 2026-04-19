@@ -20,7 +20,7 @@ from google_pollen_client import (  # noqa: E402
 
 def test_inat_taxon_ids_for_google_plant():
     ids = inat_taxon_ids_for_google_plant("OAK")
-    assert 54779 in ids and 49005 in ids
+    assert 56928 in ids and 56891 in ids
     assert inat_taxon_ids_for_google_plant("oak") == ids
     assert inat_taxon_ids_for_google_plant("UNKNOWN") == []
 
