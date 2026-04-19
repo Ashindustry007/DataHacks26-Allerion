@@ -6,6 +6,7 @@ import ProfileSetup from './pages/ProfileSetup';
 import Dashboard from './pages/Dashboard';
 import Heatmap from './pages/Heatmap';
 import Consultant from './pages/Consultant';
+import PhotoUpload from './pages/PhotoUpload';
 
 const AppContent = () => {
   return (
@@ -14,7 +15,9 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/dashboard" element={<ProfileSetup />} />
+        <Route path="/forecast" element={<Dashboard />} />
         <Route path="/heatmap" element={<Heatmap />} />
+        <Route path="/photo" element={<PhotoUpload />} />
         <Route path="/consultant" element={<Consultant />} />
       </Routes>
     </div>

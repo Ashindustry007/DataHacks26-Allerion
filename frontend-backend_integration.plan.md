@@ -4,25 +4,28 @@ overview: Wire the React frontend to the FastAPI backend by fixing blocking issu
 todos:
   - id: b1-merge-conflict
     content: Fix config.py merge conflict — remove conflict markers, pick correct taxon IDs
-    status: pending
+    status: completed
   - id: b2-mock-flag
     content: Set MOCK=false in client.js and verify fetch paths match backend routes
-    status: pending
+    status: completed
   - id: r1-dashboard-route
     content: Add /forecast route for Dashboard.jsx, keep /dashboard for ProfileSetup
-    status: pending
+    status: completed
   - id: r2-photo-route
     content: Add /photo route for PhotoUpload.jsx
-    status: pending
+    status: completed
   - id: r3-navbar
     content: Update Navbar with links to /forecast and /photo
-    status: pending
+    status: completed
   - id: d1-heatmap-rewrite
     content: Rewrite Heatmap.jsx to use Leaflet+GeoJSON from backend (or convert Google Maps to use backend data)
-    status: pending
+    status: completed
+  - id: d2-dashboard-mock-shape
+    content: Fix buildMockHeatmap to return GeoJSON FeatureCollection (Leaflet <GeoJSON> compatible)
+    status: completed
   - id: d3-heatmap-sidebar
     content: Wire Heatmap sidebar to real forecast API data
-    status: pending
+    status: completed
   - id: p2-dashboard-geoloc
     content: Add geolocation to Dashboard.jsx, replace hardcoded SD_CENTER
     status: pending
@@ -141,6 +144,8 @@ Two options (choose one):
 ### D2. Dashboard.jsx mock heatmap shape mismatch
 
 When `MOCK=true`, `buildMockHeatmap` returns `{ points: [...] }` but `Dashboard.jsx` passes it to Leaflet's `<GeoJSON>` which expects a FeatureCollection. This crashes silently. With `MOCK=false` the backend returns proper GeoJSON, so this is already correct for live mode. Keep the mock for offline dev but fix its shape to return a GeoJSON FeatureCollection (or just accept that mocks won't render the map layer).
+
+✅ Fixed: `buildMockHeatmap()` now returns a GeoJSON FeatureCollection.
 
 ### D3. Heatmap sidebar: bind to real forecast data
 
