@@ -257,17 +257,12 @@ function buildMockHeatmap(_lat, _lng) {
         const top_species_name = dominantSpecies || regionSpecies;
         const top_species_prob = Math.min(0.95, 0.2 + ci * 0.14 + seededRandom(cLat, cLng) * 0.1);
 
-        const ring = hexRing(cLat, cLng, r);
+        // Object for Leaflet Circle: { lat, lng, intensity 0-1, radiusInMeters }
         features.push({
-          type: "Feature",
-          geometry: { type: "Polygon", coordinates: [ring] },
-          properties: {
-            h3_cell: `mock_${idx}`,
-            composite_index: ci,
-            severity,
-            top_species_name,
-            top_species_prob,
-          },
+          lat: parseFloat(cLat.toFixed(3)),
+          lng: parseFloat(cLng.toFixed(3)),
+          intensity: parseFloat((ci / 5).toFixed(3)),   // normalize to 0–1
+          radiusInMeters: 80000,
         });
         idx += 1;
       }
@@ -275,8 +270,13 @@ function buildMockHeatmap(_lat, _lng) {
   }
 
   return {
-    type: "FeatureCollection",
-    features,
+    points: features,             // [[lat, lng, intensity], ...]
+    metadata: {
+      kernel: 'gaussian',
+      radius_km: 165,
+      total_points: features.length,
+      center: { lat: 20, lng: 0 },
+    },
   };
 }
 

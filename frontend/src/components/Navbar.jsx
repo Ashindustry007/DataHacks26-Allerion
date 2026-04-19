@@ -26,12 +26,12 @@ const Navbar = () => {
       <div className="hidden md:flex items-center gap-8 text-xs font-semibold tracking-[0.15em] uppercase text-slate-400">
         <Link to="/heatmap" className="hover:text-teal-400 transition-colors">Live Map</Link>
         <Link to="/forecast" className="hover:text-cyan-400 transition-colors">Forecast</Link>
+        <Link to="/photo" className="hover:text-green-400 transition-colors">Identify</Link>
         <Link to="/dashboard" className="hover:text-orange-400 transition-colors">My Profile</Link>
-        <Link to="/photo" className="hover:text-teal-300 transition-colors">Identify Plant</Link>
         <Link to="/consultant" className="hover:text-yellow-400 transition-colors">AI Consultant</Link>
       </div>
 
-      <button onClick={() => navigate('/dashboard')} className="md:hidden relative group px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider text-teal-400 border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 transition-all">
+      <button onClick={() => navigate('/forecast')} className="md:hidden relative group px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider text-teal-400 border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 transition-all">
         Menu
       </button>
 
