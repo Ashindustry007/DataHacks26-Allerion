@@ -88,80 +88,84 @@ const Heatmap = () => {
         )}
       </GoogleMap>
 
-      {/* ── Top-Right: Current Pollen Index ───────────────────────────────── */}
-      <div className={`absolute top-6 right-6 z-[1000] ${glassStyle} min-w-[240px]`}>
-        <p className="text-[10px] font-bold text-indigo-400/90 uppercase tracking-[0.2em] mb-3">
-          ▸ Current Pollen Index
-        </p>
-
-        <div className="flex items-end gap-3 mb-2">
-          <span className="text-4xl font-bold text-red-500 tracking-tighter">8.4</span>
-          <span className="text-xs text-slate-400 font-medium mb-1 uppercase tracking-wider">Critical</span>
-        </div>
-
-        <div
-          className="h-2 rounded-full mb-3 shadow-[0_0_15px_rgba(220,38,38,0.4)]"
-          style={{ background: 'linear-gradient(90deg, #4ade80, #facc15, #fb923c, #dc2626)' }}
-        />
-
-        <div className="space-y-2 mt-4 pt-4 border-t border-slate-700/50">
-          <div className="flex justify-between">
-            <span className="text-[10px] text-slate-500 font-medium uppercase">Tree Pollen</span>
-            <span className="text-[10px] text-red-400 font-bold">Severe</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[10px] text-slate-500 font-medium uppercase">Weed Pollen</span>
-            <span className="text-[10px] text-amber-400 font-bold">High</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[10px] text-slate-500 font-medium uppercase">Grass Pollen</span>
-            <span className="text-[10px] text-emerald-400 font-bold">Low</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Bottom-Left: AI Advisory ──────────────────────────────────────── */}
-      <div className={`absolute bottom-6 left-6 z-[1000] ${glassStyle} max-w-[320px]`}>
-        <p className="text-[10px] font-bold text-teal-400/90 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-          AI Advisory
-        </p>
-        <p className="text-xs text-slate-300 leading-relaxed font-light">
-          Extreme atmospheric pollen concentration detected in the downtown sector. Immediate respiratory filtration protocols are heavily advised. Exposure without a mask will result in severe allergenic shock.
-        </p>
-      </div>
-
-      {/* ── Bottom-Right: 14-Day Timeline ─────────────────────────────────── */}
-      <div className={`absolute bottom-6 right-6 z-[1000] ${glassStyle} min-w-[280px]`}>
-        <div className="flex justify-between items-center mb-3">
-          <p className="text-[10px] font-bold text-indigo-400/90 uppercase tracking-[0.2em]">
-            ▸ 14-Day Timeline
-          </p>
-          <span className="text-[9px] px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-400 font-mono">
-            T-MINUS
-          </span>
-        </div>
+      {/* ── Left Sidebar Info Overlay ─────────────────────────────────────── */}
+      <div className={`absolute top-24 left-6 z-[1000] flex flex-col w-[300px] md:w-[340px] max-h-[calc(100vh-8rem)] pointer-events-auto overflow-y-auto scrollbar-none ${glassStyle}`}>
         
-        <div className="flex items-end gap-1 h-12 mt-2">
-          {[3,4,6,8,9,10,9,7,5,4,2,2,3,4].map((h, i) => (
-            <div 
-              key={i} 
-              className={`w-full rounded-t-sm transition-all duration-300 ${
-                h >= 8 ? 'bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]' : 
-                h >= 6 ? 'bg-orange-500' : 
-                h >= 4 ? 'bg-yellow-500' : 'bg-teal-500/60'
-              }`}
-              style={{ height: `${h * 10}%`, opacity: i === 5 ? 1 : 0.6 }}
-            />
-          ))}
+        {/* ── Current Pollen Index ────────────────────────────────────────── */}
+        <div className="shrink-0 pb-6 border-b border-slate-700/50 mb-6">
+          <p className="text-[10px] font-bold text-indigo-400/90 uppercase tracking-[0.2em] mb-3">
+            ▸ Current Pollen Index
+          </p>
+
+          <div className="flex items-end gap-3 mb-2">
+            <span className="text-4xl font-bold text-red-500 tracking-tighter">8.4</span>
+            <span className="text-xs text-slate-400 font-medium mb-1 uppercase tracking-wider">Critical</span>
+          </div>
+
+          <div
+            className="h-2 rounded-full mb-3 shadow-[0_0_15px_rgba(220,38,38,0.4)]"
+            style={{ background: 'linear-gradient(90deg, #4ade80, #facc15, #fb923c, #dc2626)' }}
+          />
+
+          <div className="space-y-2 mt-4 pt-4 border-t border-slate-700/50">
+            <div className="flex justify-between">
+              <span className="text-[10px] text-slate-500 font-medium uppercase">Tree Pollen</span>
+              <span className="text-[10px] text-red-400 font-bold">Severe</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[10px] text-slate-500 font-medium uppercase">Weed Pollen</span>
+              <span className="text-[10px] text-amber-400 font-bold">High</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[10px] text-slate-500 font-medium uppercase">Grass Pollen</span>
+              <span className="text-[10px] text-emerald-400 font-bold">Low</span>
+            </div>
+          </div>
         </div>
-        <div className="flex justify-between mt-2 text-[8px] text-slate-500 font-mono">
-          <span>NOW</span>
-          <span>+7D</span>
-          <span>+14D</span>
+
+        {/* ── 14-Day Timeline ─────────────────────────────────────────────── */}
+        <div className="shrink-0 pb-6 border-b border-slate-700/50 mb-6">
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-[10px] font-bold text-indigo-400/90 uppercase tracking-[0.2em]">
+              ▸ 14-Day Timeline
+            </p>
+            <span className="text-[9px] px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-400 font-mono">
+              T-MINUS
+            </span>
+          </div>
+          
+          <div className="flex items-end gap-1 h-12 mt-2">
+            {[3,4,6,8,9,10,9,7,5,4,2,2,3,4].map((h, i) => (
+              <div 
+                key={i} 
+                className={`w-full rounded-t-sm transition-all duration-300 ${
+                  h >= 8 ? 'bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]' : 
+                  h >= 6 ? 'bg-orange-500' : 
+                  h >= 4 ? 'bg-yellow-500' : 'bg-teal-500/60'
+                }`}
+                style={{ height: `${h * 10}%`, opacity: i === 5 ? 1 : 0.6 }}
+              />
+            ))}
+          </div>
+          <div className="flex justify-between mt-2 text-[8px] text-slate-500 font-mono">
+            <span>NOW</span>
+            <span>+7D</span>
+            <span>+14D</span>
+          </div>
         </div>
+
+        {/* ── AI Advisory ─────────────────────────────────────────────────── */}
+        <div className="shrink-0">
+          <p className="text-[10px] font-bold text-teal-400/90 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+            AI Advisory
+          </p>
+          <p className="text-xs text-slate-300 leading-relaxed font-light">
+            Extreme atmospheric pollen concentration detected in the downtown sector. Immediate respiratory filtration protocols are heavily advised. Exposure without a mask will result in severe allergenic shock.
+          </p>
+        </div>
+
       </div>
-      
     </div>
   );
 };

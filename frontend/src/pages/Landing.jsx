@@ -55,32 +55,6 @@ const Landing = () => {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30"/>
       </div>
 
-      {/* ── Navbar ───────────────────────────────────────────────────────── */}
-      <nav className={`relative z-50 w-full px-6 py-5 flex items-center justify-between ${glassPanel} border-x-0 border-t-0 rounded-none`}>
-        <div className="flex items-center gap-3 cursor-pointer">
-          <div className="p-2 rounded-xl bg-teal-500/10 border border-teal-500/30 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
-            <LeafIcon className="w-5 h-5 text-teal-400" />
-          </div>
-          <span className="text-xl font-extrabold tracking-widest uppercase text-white">
-            Allerion
-          </span>
-        </div>
-
-        <div className="hidden md:flex items-center gap-8 text-xs font-semibold tracking-[0.15em] uppercase text-slate-400">
-          <Link to="/heatmap" className="hover:text-teal-400 transition-colors">Live Map</Link>
-          <Link to="/dashboard" className="hover:text-orange-400 transition-colors">My Profile</Link>
-          <Link to="/upload" className="hover:text-yellow-400 transition-colors">Plant Scanner</Link>
-        </div>
-
-        <button onClick={() => navigate('/dashboard')} className="relative group px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider text-white overflow-hidden">
-          <div className={`absolute inset-0 ${cyberGradient} opacity-80 group-hover:opacity-100 transition-opacity`} />
-          <div className="absolute inset-[1px] bg-slate-900 rounded-[7px] transition-all group-hover:bg-slate-900/80" />
-          <span className="relative flex items-center justify-center gap-2">
-            Sign In
-          </span>
-        </button>
-      </nav>
-
       {/* ── Main Layout Wrapper ──────────────────────────────────────────── */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pt-24 pb-16">
         
@@ -148,17 +122,17 @@ const Landing = () => {
             </button>
           </div>
 
-          {/* Card 3: The Scout */}
+          {/* Card 3: The Consultant */}
           <div className={`group flex flex-col p-8 rounded-3xl ${glassPanel} hover:border-orange-500/30 transition-colors`}>
             <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(251,146,60,0.1)] group-hover:shadow-[0_0_30px_rgba(251,146,60,0.2)] transition-shadow">
               <CameraIcon className="w-6 h-6 text-orange-400" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-3 tracking-wide">AI Plant Scanner</h3>
+            <h3 className="text-xl font-bold text-white mb-3 tracking-wide">AI Allergy Consultant</h3>
             <p className="text-sm text-slate-400 leading-relaxed mb-8 flex-grow">
-              Identify threats on the go. Snap a photo of any plant to instantly learn its species, phenology stage, and current pollen-releasing status.
+              Instantly chat with our AI to analyze plant photos, identify local risks, or get personalized travel recommendations based on your allergy profile.
             </p>
-            <button onClick={() => navigate('/upload')} className="w-full py-3 rounded-lg bg-slate-800/80 border border-slate-700 text-xs font-bold uppercase tracking-widest text-orange-400 hover:bg-orange-500/10 transition-colors mt-auto">
-              Launch Scanner
+            <button onClick={() => navigate('/consultant')} className="w-full py-3 rounded-lg bg-slate-800/80 border border-slate-700 text-xs font-bold uppercase tracking-widest text-orange-400 hover:bg-orange-500/10 transition-colors mt-auto">
+              Access AI Consultant
             </button>
           </div>
 
