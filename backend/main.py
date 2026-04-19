@@ -33,35 +33,48 @@ app.add_middleware(
 # GET /api/forecast
 # ---------------------------------------------------------------------------
 
-@app.get("/api/forecast", response_model=ForecastResponse)
-async def get_forecast(lat: float, lng: float):
+async def build_forecast_response(
+    lat: float,
+    lng: float,
+    *,
+    use_cache: bool = True,
+    with_gemini: bool = True,
+    persist: bool = True,
+) -> dict:
+    """
+    Core forecast pipeline (Person B integrations + Person A phenology).
+
+    `with_gemini=False` skips LLM narrative/advisory (fallback text only) — used for
+    `/api/photo` nested `local_forecast` to avoid a second Gemini call when cache is cold.
+    """
     h3_cell = h3.latlng_to_cell(lat, lng, H3_RESOLUTION)
 
-    cached = get_cached_forecast(h3_cell)
-    if cached:
-        return cached
+    if use_cache:
+        cached = get_cached_forecast(h3_cell)
+        if cached:
+            return cached
 
     neighbors = list(h3.grid_disk(h3_cell, 1))
     inat_obs = get_recent_observations(neighbors)
 
-    # Attempt to fetch live Google Pollen data
     google_data = None
     try:
         from google_pollen_client import fetch_google_pollen
+
         google_data = await fetch_google_pollen(lat, lng)
     except Exception:
-        pass  # degrade gracefully — base table still works
+        pass
 
     daily = generate_14day_forecast(lat, lng, inat_obs, google_data)
 
-    # Attempt Gemini narrative + advisory; fall back to static defaults
     narrative, advisory = _fallback_narrative_advisory(daily)
-    try:
-        result = await generate_forecast_and_advisory(daily, lat, lng)
-        narrative = result.get("narrative", narrative)
-        advisory  = result.get("advisory", advisory)
-    except Exception:
-        pass
+    if with_gemini:
+        try:
+            result = await generate_forecast_and_advisory(daily, lat, lng)
+            narrative = result.get("narrative", narrative)
+            advisory = result.get("advisory", advisory)
+        except Exception:
+            pass
 
     response = {
         "location":     {"lat": lat, "lng": lng, "h3_cell": h3_cell, "city": ""},
@@ -71,8 +84,16 @@ async def get_forecast(lat: float, lng: float):
         "advisory":     advisory,
     }
 
-    save_forecast(h3_cell, response)
+    if persist:
+        save_forecast(h3_cell, response)
     return response
+
+
+@app.get("/api/forecast", response_model=ForecastResponse)
+async def get_forecast(lat: float, lng: float):
+    return await build_forecast_response(
+        lat, lng, use_cache=True, with_gemini=True, persist=True
+    )
 
 
 def _fallback_narrative_advisory(daily: list[dict]) -> tuple[dict, dict]:
@@ -122,8 +143,17 @@ class PhotoRequest(BaseModel):
 async def classify_plant_photo(body: PhotoRequest):
     try:
         classification = await classify_photo(body.image_base64, body.lat, body.lng)
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Vision API error: {exc}") from exc
+    except Exception:
+        # Emergency fallback (plan.md) — do not fail the whole request
+        classification = {
+            "species_id":       None,
+            "species_name":     "Unknown plant",
+            "is_allergen":      False,
+            "phenology_stage":  "DORMANT",
+            "pollen_releasing": False,
+            "confidence":       0.0,
+            "reasoning":        "Couldn't identify — try a closer, well-lit photo.",
+        }
 
     explanation, action = "Unable to generate explanation.", "Consult a local allergy specialist."
     try:
@@ -137,25 +167,33 @@ async def classify_plant_photo(body: PhotoRequest):
         explanation = result.get("explanation", explanation)
         action      = result.get("action", action)
     except Exception:
-        pass
+        if classification.get("species_name") == "Unknown plant":
+            explanation = "We couldn't identify this plant from the image."
+            action = "Take a closer photo of leaves or flowers in natural light, then try again."
 
-    # Fetch local forecast for the photo location
+    # Local forecast: use cache if present; else compute without a second Gemini call
     local_forecast = None
     try:
-        local_forecast = await get_forecast(body.lat, body.lng)
+        local_forecast = await build_forecast_response(
+            body.lat,
+            body.lng,
+            use_cache=True,
+            with_gemini=False,
+            persist=False,
+        )
     except Exception:
         pass
 
     return {
-        "species_id":      classification.get("species_id"),
-        "species_name":    classification.get("species_name", "Unknown plant"),
-        "is_allergen":     classification.get("is_allergen", False),
-        "phenology_stage": classification.get("phenology_stage", "DORMANT"),
+        "species_id":       classification.get("species_id"),
+        "species_name":     classification.get("species_name", "Unknown plant"),
+        "is_allergen":      classification.get("is_allergen", False),
+        "phenology_stage":  classification.get("phenology_stage", "DORMANT"),
         "pollen_releasing": classification.get("pollen_releasing", False),
-        "confidence":      classification.get("confidence", 0.0),
-        "explanation":     explanation,
-        "action":          action,
-        "local_forecast":  local_forecast,
+        "confidence":       classification.get("confidence", 0.0),
+        "explanation":      explanation,
+        "action":           action,
+        "local_forecast":   local_forecast,
     }
 
 

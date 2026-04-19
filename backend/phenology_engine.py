@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 from config import ALLERGEN_SPECIES, H3_RESOLUTION
+from google_pollen_client import extract_upi_for_google_code
 
 _DATA_DIR = Path(__file__).parent / "data"
 
@@ -80,6 +81,26 @@ def _compute_stage(target_doy: int, onset_doy: int, peak_doy: int, duration: int
     return "POST_BLOOM", 0.0
 
 
+def infer_phenology_stage_from_base(taxon_id: int, lat: float, observed_on: str) -> str:
+    """
+    When an iNat observation has no Plant Phenology annotation, infer
+    DORMANT..POST_BLOOM from the regional base phenology table and observation date.
+    """
+    base = _get_base_phenology(taxon_id, lat)
+    if not base:
+        return "DORMANT"
+    try:
+        obs_date = date.fromisoformat(observed_on[:10])
+    except (ValueError, TypeError):
+        return "DORMANT"
+    target_doy = obs_date.timetuple().tm_yday
+    onset_doy = base["onset_doy"]
+    peak_doy = base["peak_doy"]
+    duration = base["duration"]
+    stage, _prob = _compute_stage(target_doy, onset_doy, peak_doy, duration)
+    return stage
+
+
 def _compute_seasonal_shift(species_id: int, inat_obs: list[dict], lat: float) -> int:
     """Estimate how many days ahead/behind base phenology is this season from iNat obs."""
     base = _get_base_phenology(species_id, lat)
@@ -127,26 +148,6 @@ def _index_to_severity(composite_index: float) -> str:
     return "very_high"
 
 
-def _extract_google_upi(google_day: Optional[dict], google_code: str) -> Optional[int]:
-    """Pull the per-species UPI out of a Google Pollen day dict."""
-    if not google_day:
-        return None
-    plant_info = google_day.get("plants", {})
-    entry = plant_info.get(google_code)
-    if entry and entry.get("upi") is not None:
-        return int(entry["upi"])
-    # Fall back to pollen-type-level UPI
-    type_map = {"TREE": "tree", "GRASS": "grass", "WEED": "weed"}
-    species_meta = next((s for s in ALLERGEN_SPECIES if s["google_code"] == google_code), None)
-    if species_meta:
-        ptype = type_map.get(species_meta["pollen_type"].upper(), species_meta["pollen_type"])
-        types_info = google_day.get("types", {})
-        type_entry = types_info.get(ptype.upper()) or types_info.get(ptype)
-        if type_entry and type_entry.get("upi") is not None:
-            return int(type_entry["upi"])
-    return None
-
-
 def _inat_obs_count(species_id: int, inat_obs: list[dict]) -> int:
     return sum(1 for o in inat_obs if o.get("taxon_id") == species_id)
 
@@ -171,7 +172,11 @@ def compute_species_forecast(
     target_doy = today_doy + day_offset
     stage, pollen_prob = _compute_stage(target_doy, onset_doy, peak_doy, duration)
 
-    google_upi = _extract_google_upi(google_day, species["google_code"]) if day_offset <= 4 else None
+    google_upi = (
+        extract_upi_for_google_code(google_day, species["google_code"])
+        if day_offset <= 4
+        else None
+    )
     pollen_index = _compute_pollen_index(pollen_prob, species["allergenicity"], google_upi)
 
     days_to_peak = max(0, peak_doy - target_doy)

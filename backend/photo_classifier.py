@@ -1,14 +1,13 @@
-"""Photo species classifier using Gemini Vision — Person B implements this."""
+"""Photo species classifier using Gemini Vision — Person B (hours 14–16; shares JSON helpers with gemini_agents)."""
 import json
 
 import httpx
 
-from config import ALLERGEN_SPECIES, GEMINI_API_KEY
+from config import ALLERGEN_SPECIES, GEMINI_API_KEY, GEMINI_GENERATE_CONTENT_URL
+from gemini_agents import parse_gemini_json_text
 
-_GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-2.0-flash:generateContent"
-)
+_GEMINI_URL = GEMINI_GENERATE_CONTENT_URL
+_VISION_JSON_RETRIES = 2
 
 
 async def classify_photo(image_base64: str, lat: float, lng: float) -> dict:
@@ -42,6 +41,10 @@ Return JSON with exactly these keys:
   "reasoning": "one sentence explaining the identification and stage assessment"
 }}"""
 
+    if not GEMINI_API_KEY or GEMINI_API_KEY.strip() in ("", "your-key-here"):
+        raise ValueError("GEMINI_API_KEY is not configured")
+
+    # REST JSON must use camelCase for Part.inlineData (snake_case → 400 INVALID_ARGUMENT)
     payload = {
         "contents": [{
             "parts": [
@@ -52,9 +55,9 @@ Return JSON with exactly these keys:
                     )
                 },
                 {
-                    "inline_data": {
-                        "mime_type": "image/jpeg",
-                        "data":      image_base64,
+                    "inlineData": {
+                        "mimeType": "image/jpeg",
+                        "data":     image_base64,
                     }
                 },
             ]
@@ -66,12 +69,20 @@ Return JSON with exactly these keys:
         },
     }
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(f"{_GEMINI_URL}?key={GEMINI_API_KEY}", json=payload)
-        resp.raise_for_status()
-        text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
-
-    text = text.strip()
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1].rsplit("```", 1)[0]
-    return json.loads(text)
+    last_err: Exception | None = None
+    for _ in range(_VISION_JSON_RETRIES + 1):
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            resp = await client.post(f"{_GEMINI_URL}?key={GEMINI_API_KEY}", json=payload)
+            resp.raise_for_status()
+            body = resp.json()
+            cands = body.get("candidates") or []
+            if not cands:
+                raise ValueError("Gemini vision: no candidates")
+            text = cands[0]["content"]["parts"][0]["text"]
+        try:
+            return parse_gemini_json_text(text)
+        except json.JSONDecodeError as e:
+            last_err = e
+            continue
+    assert last_err is not None
+    raise last_err

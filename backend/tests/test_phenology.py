@@ -9,6 +9,7 @@ from phenology_engine import (
     _get_base_phenology,
     _index_to_severity,
     compute_day_forecast,
+    infer_phenology_stage_from_base,
 )
 
 
@@ -32,6 +33,22 @@ def test_get_base_phenology_known_species():
 def test_get_base_phenology_unknown_species():
     result = _get_base_phenology(99999, 32.71)
     assert result is None
+
+
+def test_infer_phenology_stage_from_base_returns_stage():
+    stage = infer_phenology_stage_from_base(56928, 32.71, "2026-04-15")
+    assert stage in (
+        "DORMANT",
+        "BUDDING",
+        "EARLY_BLOOM",
+        "PEAK_BLOOM",
+        "LATE_BLOOM",
+        "POST_BLOOM",
+    )
+
+
+def test_infer_phenology_stage_unknown_taxon():
+    assert infer_phenology_stage_from_base(99999, 32.71, "2026-04-15") == "DORMANT"
 
 
 def test_compute_stage_dormant():
