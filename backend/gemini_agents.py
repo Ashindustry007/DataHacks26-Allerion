@@ -8,7 +8,7 @@ from config import GEMINI_API_KEY
 
 _GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-2.0-flash:generateContent"
+    "gemini-2.5-flash:generateContent"
 )
 _DATA_DIR = Path(__file__).parent / "data"
 

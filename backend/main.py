@@ -37,12 +37,18 @@ app.add_middleware(
 async def get_forecast(lat: float, lng: float):
     h3_cell = h3.latlng_to_cell(lat, lng, H3_RESOLUTION)
 
-    cached = get_cached_forecast(h3_cell)
-    if cached:
-        return cached
+    try:
+        cached = get_cached_forecast(h3_cell)
+        if cached:
+            return cached
+    except Exception:
+        pass
 
     neighbors = list(h3.grid_disk(h3_cell, 1))
-    inat_obs = get_recent_observations(neighbors)
+    try:
+        inat_obs = get_recent_observations(neighbors)
+    except Exception:
+        inat_obs = []
 
     # Attempt to fetch live Google Pollen data
     google_data = None
@@ -71,7 +77,10 @@ async def get_forecast(lat: float, lng: float):
         "advisory":     advisory,
     }
 
-    save_forecast(h3_cell, response)
+    try:
+        save_forecast(h3_cell, response)
+    except Exception:
+        pass
     return response
 
 
