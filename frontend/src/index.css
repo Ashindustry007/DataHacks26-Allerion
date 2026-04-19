@@ -4,9 +4,14 @@
 
 /* PollenCast — tech-noir base */
 html,
-body {
-  font-family: Inter, ui-sans-serif, system-ui, Roboto, 'Segoe UI', sans-serif;
+body,
+.leaflet-container {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif !important;
   background: #0f172a;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Orbitron', system-ui, sans-serif !important;
 }
 
 /* Leaflet city pins: neutralize default leaflet image path quirks */
@@ -16,7 +21,6 @@ body {
 }
 
 .leaflet-container {
-  font-family: Inter, ui-sans-serif, system-ui, Roboto, sans-serif;
   background: #050811 !important;
 }
 

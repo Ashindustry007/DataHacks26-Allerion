@@ -66,11 +66,8 @@ const Landing = () => {
             <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Global Coverage Active</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight text-white mb-6">
-            Ahead of <br className="md:hidden" />
-            <span className={`text-transparent bg-clip-text ${cyberGradient} filter drop-shadow-[0_0_20px_rgba(251,146,60,0.4)]`}>
-              Every Trigger.
-            </span>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white mb-6 whitespace-nowrap">
+            Ahead of <span className={`text-transparent bg-clip-text ${cyberGradient} filter drop-shadow-[0_0_20px_rgba(251,146,60,0.4)]`}>Every Trigger.</span>
           </h1>
 
           <p className="text-lg md:text-xl text-slate-400 font-light leading-relaxed max-w-3xl mx-auto mb-12">
