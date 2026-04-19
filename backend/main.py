@@ -12,7 +12,11 @@ from firestore_client import (
     save_forecast,
     save_observations,
 )
-from gemini_agents import generate_forecast_and_advisory, generate_species_explanation
+from gemini_agents import (
+    generate_consultant_reply,
+    generate_forecast_and_advisory,
+    generate_species_explanation,
+)
 from heatmap_generator import generate_heatmap, load_heatmap, save_heatmap
 from inat_client import _bbox_from_cells, fetch_inat_delta
 from models import ForecastResponse, PhotoClassifyResponse
@@ -198,21 +202,32 @@ async def classify_plant_photo(body: PhotoRequest):
 
 
 # ---------------------------------------------------------------------------
+# POST /api/consultant
+# ---------------------------------------------------------------------------
+
+class ConsultantRequest(BaseModel):
+    query: str
+    lat: float
+    lng: float
+
+
+@app.post("/api/consultant")
+async def consultant_chat(body: ConsultantRequest):
+    forecast = await build_forecast_response(
+        body.lat, body.lng, use_cache=True, with_gemini=False, persist=False
+    )
+    daily = forecast.get("daily", [])
+    reply = await generate_consultant_reply(body.query, daily, body.lat, body.lng)
+    return {"reply": reply}
+
+
+# ---------------------------------------------------------------------------
 # GET /api/heatmap
 # ---------------------------------------------------------------------------
 
 @app.get("/api/heatmap")
-async def get_heatmap(lat: float, lng: float, radius_km: float = 30):
-    # radius_km → approximate H3 ring count at resolution 4 (~22km per ring)
-    radius_rings = max(1, int(radius_km / 22))
-
-    # Try pre-computed file first (fast path for demo)
-    cached_geojson = load_heatmap("heatmap_cache.json")
-    if cached_geojson:
-        return cached_geojson
-
-    geojson = generate_heatmap(lat, lng, radius_rings)
-    return geojson
+async def get_heatmap(lat: float, lng: float, radius_km: float = 1):
+    return generate_heatmap(lat, lng, radius_km)
 
 
 # ---------------------------------------------------------------------------

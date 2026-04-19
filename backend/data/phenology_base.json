@@ -1,5 +1,5 @@
 {
-  "53587": {
+  "48678": {
     "name": "Common ragweed",
     "pollen_type": "weed",
     "lat_bands": {
@@ -30,7 +30,7 @@
       }
     }
   },
-  "54779": {
+  "56928": {
     "name": "White oak",
     "pollen_type": "tree",
     "lat_bands": {
@@ -61,7 +61,7 @@
       }
     }
   },
-  "49883": {
+  "48734": {
     "name": "Paper birch",
     "pollen_type": "tree",
     "lat_bands": {
@@ -92,7 +92,7 @@
       }
     }
   },
-  "49399": {
+  "49085": {
     "name": "Eastern red cedar",
     "pollen_type": "tree",
     "lat_bands": {
@@ -123,7 +123,7 @@
       }
     }
   },
-  "57190": {
+  "64727": {
     "name": "Timothy grass",
     "pollen_type": "grass",
     "lat_bands": {
@@ -154,7 +154,7 @@
       }
     }
   },
-  "54808": {
+  "49095": {
     "name": "Green ash",
     "pollen_type": "tree",
     "lat_bands": {
@@ -185,7 +185,7 @@
       }
     }
   },
-  "53547": {
+  "54772": {
     "name": "American elm",
     "pollen_type": "tree",
     "lat_bands": {
@@ -216,7 +216,7 @@
       }
     }
   },
-  "52119": {
+  "53548": {
     "name": "Eastern cottonwood",
     "pollen_type": "tree",
     "lat_bands": {
@@ -247,7 +247,7 @@
       }
     }
   },
-  "57140": {
+  "52823": {
     "name": "Olive",
     "pollen_type": "tree",
     "lat_bands": {
@@ -309,7 +309,7 @@
       }
     }
   },
-  "56034": {
+  "48513": {
     "name": "Red alder",
     "pollen_type": "tree",
     "lat_bands": {
@@ -340,7 +340,7 @@
       }
     }
   },
-  "60307": {
+  "64698": {
     "name": "Kentucky bluegrass",
     "pollen_type": "grass",
     "lat_bands": {
@@ -371,7 +371,7 @@
       }
     }
   },
-  "49005": {
+  "56891": {
     "name": "Northern red oak",
     "pollen_type": "tree",
     "lat_bands": {
@@ -402,7 +402,7 @@
       }
     }
   },
-  "53034": {
+  "56610": {
     "name": "Giant ragweed",
     "pollen_type": "weed",
     "lat_bands": {
@@ -433,7 +433,7 @@
       }
     }
   },
-  "52801": {
+  "47602": {
     "name": "Perennial ryegrass",
     "pollen_type": "grass",
     "lat_bands": {

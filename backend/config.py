@@ -24,7 +24,7 @@ ALLERGEN_SPECIES = [
     {"taxon_id": 48734, "name": "Paper birch",          "pollen_type": "tree",  "allergenicity": 4, "google_code": "BIRCH"},
     {"taxon_id": 49085, "name": "Eastern red cedar",    "pollen_type": "tree",  "allergenicity": 3, "google_code": "JUNIPER"},
     {"taxon_id": 64727, "name": "Timothy grass",        "pollen_type": "grass", "allergenicity": 4, "google_code": "GRAMINALES"},
-    {"taxon_id": 49095, "name": "White ash",            "pollen_type": "tree",  "allergenicity": 3, "google_code": "ASH"},
+    {"taxon_id": 49095, "name": "Green ash",            "pollen_type": "tree",  "allergenicity": 3, "google_code": "ASH"},
     {"taxon_id": 54772, "name": "American elm",         "pollen_type": "tree",  "allergenicity": 3, "google_code": "ELM"},
     {"taxon_id": 53548, "name": "Eastern cottonwood",   "pollen_type": "tree",  "allergenicity": 2, "google_code": "COTTONWOOD"},
     {"taxon_id": 52823, "name": "Olive",                "pollen_type": "tree",  "allergenicity": 4, "google_code": "OLIVE"},

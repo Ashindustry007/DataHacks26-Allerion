@@ -140,6 +140,38 @@ Be specific — mention species names and severity levels by name."""
     return await _call_gemini(system, user_data, temperature=0.3)
 
 
+async def generate_consultant_reply(
+    user_query: str,
+    daily_forecasts: list[dict],
+    lat: float,
+    lng: float,
+) -> str:
+    """Answer a free-text allergy question grounded in the current pollen forecast."""
+    advisory_kb_text = json.dumps(_ADVISORY_KB, indent=2)
+
+    system = f"""You are an expert AI allergy consultant. You have access to real-time
+pollen forecast data for the user's location and an approved knowledge base of
+advisory measures. Answer the user's question conversationally but precisely,
+referencing specific species, severity levels, and dates from the forecast.
+
+Approved advisory knowledge base:
+{advisory_kb_text}
+
+Return JSON with exactly one key: "reply" (a string with your full answer).
+Keep it 3-6 sentences. Use plain language. Mention species names and numbers."""
+
+    user_data = json.dumps({
+        "user_question": user_query,
+        "location": {"lat": lat, "lng": lng},
+        "today": daily_forecasts[0] if daily_forecasts else {},
+        "seven_day": daily_forecasts[:7],
+        "fourteen_day": daily_forecasts,
+    })
+
+    result = await _call_gemini(system, user_data, temperature=0.4)
+    return result.get("reply", "I couldn't generate a response. Please try again.")
+
+
 async def generate_species_explanation(
     species_name: str,
     stage: str,
