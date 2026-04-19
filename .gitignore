@@ -3,3 +3,15 @@ ece143-489600-1f19396bc1d5.json
 .env
 frontend/.env
 graphify-out
+infra/.terraform/
+infra/terraform.tfstate*
+infra/terraform.tfvars
+infra/terraform.tfstate.backup
+infra/terraform.tfstate.backup.backup
+infra/terraform.tfstate.backup.backup.backup
+infra/terraform.tfstate.backup.backup.backup.backup
+infra/terraform.tfstate.backup.backup.backup.backup.backup
+infra/terraform.tfstate.backup.backup.backup.backup.backup.backup
+infra/terraform.tfstate.backup.backup.backup.backup.backup.backup.backup
+infra/terraform.tfstate.backup.backup.backup.backup.backup.backup.backup.backup
+infra/terraform.tfstate.backup.backup.backup.backup.backup.backup.backup.backup.backup
