@@ -1,5 +1,3 @@
-# Allerion
-
 <img width="2413" height="1316" alt="cover" src="https://github.com/user-attachments/assets/a6effddb-9411-43ea-882f-3423cfd00879" />
 
 Species-specific pollen forecasting. Fuses iNaturalist citizen-science observations + Google Pollen API + a real phenology table to produce 14-day, neighborhood-level pollen forecasts per allergen species.
